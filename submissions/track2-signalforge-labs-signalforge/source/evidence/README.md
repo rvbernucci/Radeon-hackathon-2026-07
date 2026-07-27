@@ -55,9 +55,28 @@ Radeon/ROCm/model identity. It excludes prompts, responses, source excerpts, fre
 messages, and private reasoning. The verifier rejects unknown fields, unsafe identifiers, broken
 claim references, incomplete runtime attestation, and privacy flags that are not explicitly true.
 
-The final release checklist is intentionally fail-closed. It remains pending
-until later Sprints produce the Radeon trace, golden demo, licenses, public
-artifacts, secret scan, and SG-05 freeze.
+The historical `v1.1.0` release remains fail-closed and immutable in
+[`sprint34-release-attestation.json`](sprint34-release-attestation.json). Sprint 36 creates the
+forward `v1.1.1` championship release; its exact source, public `linux/amd64` digest, clean-run
+workflows, Radeon evidence, artifact hashes, and human decisions are frozen only after every
+forward-release gate passes.
+
+## Sprint 36 Championship Evidence
+
+The current public-safe Radeon evidence is split by authority:
+
+- [`sprint36-radeon-local-journey.json`](sprint36-radeon-local-journey.json) records an accepted
+  local-only journey.
+- [`sprint36-radeon-hybrid-journey.json`](sprint36-radeon-hybrid-journey.json) records an accepted
+  journey that used both the organizer-provided Radeon API and local ROCm inference.
+- [`sprint36-radeon-demo-journey.json`](sprint36-radeon-demo-journey.json) binds the current
+  championship video captures to one accepted run and trace identity.
+- [`sprint36-radeon-resilience.json`](sprint36-radeon-resilience.json) records API-loss recovery
+  through the authorized local route and model-loss fail-closed behavior.
+
+These projections exclude prompts, responses, source bodies, credentials, private memory, private
+reasoning, and sealed identifiers. Contract completion is not represented as external factual
+accuracy.
 
 ## Retrieval Evidence
 
@@ -114,6 +133,27 @@ python3 scripts/render_radeon_optimization.py --output /tmp/radeon-optimization.
 cmp evidence/radeon-optimization.svg /tmp/radeon-optimization.svg
 ```
 
+## Sprint 33 Public Latency Tournament
+
+[`sprint33-latency-tournament.json`](sprint33-latency-tournament.json) is the privacy-safe aggregate
+of a bounded three-mode tournament over eight public, non-sealed development journeys per mode.
+All three modes passed `8/8` runtime and answer contracts. Relative to the two-worker local
+baseline, four-worker local execution produced a `2.7777x` aggregate speedup and a `64.37%` p50
+reduction. Four-worker hybrid execution produced a `2.0756x` aggregate speedup and a `57.46%` p50
+reduction, with 20 successful Radeon API calls and one failed remote call recovered locally.
+
+These results are workload-specific development evidence. Contract success is not external factual
+accuracy, professional review, rights approval, or a claim of universal GPU performance. The
+public aggregate excludes prompts, responses, source excerpts, private reasoning, credentials,
+case identifiers, and per-case measurements. It remains hash-linked to the private source
+artifact and exact evaluation binary.
+
+Recompute every published comparison and reject raw or per-case fields with:
+
+```bash
+python3 scripts/verify_sprint33_latency_tournament.py
+```
+
 ## Adversarial Hardening
 
 `hardening-matrix.json` is the deterministic Sprint 12 result for the frozen 26-case matrix in
@@ -140,22 +180,19 @@ remain explicit in the source matrix.
 ## Judge Package
 
 `judge-package.json` binds the six-page project specification, six-slide supplemental deck,
-architecture diagram, final cut sheet, narration, safe live-run export, capture manifest, and
-4 minute 12.9 second H.264/AAC demo to their current hashes. The PDF was rendered page by page and
-visually inspected. The deck was rendered through an external office renderer, inspected slide by
-slide, and passed the canvas-overflow gate.
+architecture diagram, final cut sheet, narration, current safe Radeon evidence, selected captures,
+and 284.970-second 1080p H.264/AAC demo to their current hashes. The PDF was rendered page by page
+and visually inspected. The deck was rendered through an external office renderer, inspected
+slide by slide, and passed both template-fidelity and canvas-overflow gates. The video passed
+visual, audio, English-language, privacy, and duration review.
 
-`runs/sprint13/live-demo-capture.json` records the real Radeon run, governed follow-up, memory
-control, runtime identity, playback disclosures, video properties, audio measurements, and the
-12-timestamp visual review. The primary run completed locally in 161.51 seconds with ten local
-model calls, six context packets, 38/38 supported claims, eight required sections, and complete
-evidence coverage. Those values are bound to `live-demo-safe-export.json`; they do not replace the
-separately frozen Sprint 11 optimization result.
+The current demo journey completed on Radeon with 52 timeline events, six context packets, 18
+deterministic engine calls, five review events, and both local ROCm and organizer-provided Radeon
+API inference under one run and trace identity. These are product-contract observations, not a
+claim of universal factual accuracy.
 
-The package status is `public_artifacts_verified`. The recording passed technical and visual
-review, and the video, PDF, deck, architecture, cut sheet, narration, capture manifest, safe
-export, release page, and repository were downloaded or opened without authentication. Every
-downloaded artifact matched its registered local SHA-256.
+The package status is `public_artifacts_verified`. Public URL and downloaded-hash readback are
+completed after the immutable `sprint36-championship-v1` artifact release is published.
 
 ## Chaos Evidence
 

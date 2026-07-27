@@ -6,6 +6,23 @@ macroeconomic series, and market data into auditable intelligence.
 SignalForge is developed by **SignalForge Labs** for the AMD AI DevMaster Hackathon Track 2, with
 core inference designed to run locally on AMD Radeon GPUs through ROCm.
 
+## Judges: Start Here
+
+The fastest review path is the [SignalForge Judge Guide](JUDGES.md). It maps the complete
+120-point Track 2 rubric to the demo, deck, project specification, runtime evidence, and exact
+championship release.
+
+- [4 minute 44.9 second Radeon demo](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Radeon-Demo.mp4)
+- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Judge-Deck.pptx)
+- [Six-page project specification](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Project-Specification.pdf)
+- [Official Track 2 compliance matrix](docs/track2-compliance.md)
+- [Current Radeon demo journey](evidence/sprint36-radeon-demo-journey.json)
+- [Current artifact hashes](evidence/judge-package.json)
+
+The forward championship image is `ghcr.io/rvbernucci/signalforge:v1.1.1`. Its immutable digest and
+source identity are published after the release build completes. Historical `v1.1.0` remains
+byte-identical and available as the rollback.
+
 ## Goal
 
 Build a private research desk where specialist agents can:
@@ -16,40 +33,6 @@ Build a private research desk where specialist agents can:
 - preserve local memory;
 - produce clear, evidence-grounded analysis.
 
-## Technology 20 vNext Evaluation Lane
-
-The current `main` branch contains a guarded expansion from the immutable Microsoft/NVIDIA
-baseline to twenty US-listed technology issuers. All twenty companies are discoverable in the
-workspace and have explicit machine-readable activation states. This does **not** mean that every
-company, metric, or pair is research-ready.
-
-The vNext lane currently provides:
-
-- a governed issuer and share-class catalog for twenty companies;
-- SEC-first point-in-time data authority and deterministic financial-activation reports;
-- 80 baseline standalone development journeys plus a separate 60-case public augmentation for
-  economics, valuation-readiness, and thesis monitoring; sealed evaluation remains isolated;
-- five bounded peer lanes with metric-level `comparable`,
-  `comparable_with_caveat`, `not_comparable`, or `unavailable` dispositions;
-- a value-free peer-boundary matrix exposing definitions, fiscal periods, taxonomy, units,
-  dimensions, accounting perimeters, segment scope, security identity, caveats, and explicit
-  non-activation of market dates and security classes;
-- a peer policy that prevents individually valid company metrics from becoming an unauthorized
-  cross-company direction;
-- local Radeon semantic evaluation with both independent critics and one final synthesis; and
-- a workspace that exposes company authority, evidence recency, governed periods, explicit
-  unavailable price dates, scenario assumptions, deterministic receipts, abstentions,
-  metric-level peer dispositions, and adjacent comparison caveats without enabling a guarded
-  company or pair;
-- fail-closed workspace states that preserve the last accepted case when the local model,
-  optional API, retrieval, or a deterministic tool is unavailable.
-
-All five peer lanes remain evaluation-only until semantic execution, sealed testing, named
-professional review, and exact-release rights review are complete. Private prompts, responses,
-source bodies, model weights, sealed labels, and raw evaluation reports are intentionally absent
-from this repository. The public fixtures and tests prove contracts and deterministic authority;
-they do not claim universal factual accuracy or promote the vNext release.
-
 ## Golden Vertical
 
 The first complete journey compares Microsoft (`CIK 0000789019`) and NVIDIA
@@ -57,6 +40,20 @@ The first complete journey compares Microsoft (`CIK 0000789019`) and NVIDIA
 infrastructure spending. SignalForge will expose the financial evidence, transmission mechanisms,
 valuation assumptions, scenarios, and thesis-invalidating observations rather than naming an
 unqualified winner.
+
+## What Can I Ask?
+
+SignalForge is designed for bounded research questions such as:
+
+- "How would higher-for-longer interest rates affect Microsoft and NVIDIA through operating
+  performance, financing conditions, and valuation assumptions?"
+- "Which evidence supports or weakens NVIDIA's current investment thesis, and what should I monitor
+  next?"
+- "Is Microsoft comparable with Alphabet on this metric, or do accounting perimeter, segment, and
+  fiscal-period differences make the comparison unsafe?"
+
+The system may narrow or decline a question when evidence, temporal scope, company activation, or
+comparison authority is insufficient.
 
 ## Quick Start
 
@@ -87,27 +84,62 @@ Both ports bind to loopback. Fixture inference requires no GPU, model, credentia
 See [Radeon Mission Control](docs/radeon-mission-control.md) for the four dashboards, the protected
 Inference Inspector, privacy boundaries, and exact validation commands.
 
+## Technology 20 vNext Evaluation Lane
+
+The current `main` branch contains a guarded expansion from the immutable Microsoft/NVIDIA
+baseline to twenty US-listed technology issuers. All twenty companies are discoverable in the
+workspace and have explicit machine-readable activation states. This does **not** mean that every
+company, metric, or pair is research-ready.
+
+The vNext lane currently provides:
+
+- a governed issuer and share-class catalog for twenty companies;
+- SEC-first point-in-time data authority and deterministic financial-activation reports;
+- 80 baseline standalone development journeys plus a separate 60-case public augmentation for
+  economics, valuation-readiness, and thesis monitoring; sealed evaluation remains isolated;
+- five bounded peer lanes with metric-level `comparable`,
+  `comparable_with_caveat`, `not_comparable`, or `unavailable` dispositions;
+- a value-free peer-boundary matrix exposing definitions, fiscal periods, taxonomy, units,
+  dimensions, accounting perimeters, segment scope, security identity, caveats, and explicit
+  non-activation of market dates and security classes;
+- a peer policy that prevents individually valid company metrics from becoming an unauthorized
+  cross-company direction;
+- local Radeon semantic evaluation with both independent critics and one final synthesis;
+- a workspace that exposes company authority, evidence recency, governed periods, explicit
+  unavailable price dates, scenario assumptions, deterministic receipts, abstentions,
+  metric-level peer dispositions, and adjacent comparison caveats without enabling a guarded
+  company or pair; and
+- fail-closed workspace states that preserve the last accepted case when the local model,
+  optional API, retrieval, or a deterministic tool is unavailable.
+
+Peer lanes that have not completed their company-specific evidence and domain gates remain
+evaluation-only. Private prompts, responses, source bodies, model weights, sealed labels, and raw
+evaluation reports are intentionally absent from this repository. The public fixtures and tests
+prove contracts and deterministic authority; they do not claim universal factual accuracy.
+
 ## Project Documentation
 
 - [Project specification PDF](output/pdf/SignalForge-Project-Specification.pdf)
 - [Six-slide judge deck](output/presentation/SignalForge-Judge-Deck.pptx)
 - [Architecture diagram](docs/architecture.svg)
-- [4 minute 12.9 second Radeon demo](output/video/SignalForge-Radeon-Demo.mp4)
+- [4 minute 44.9 second Radeon demo](output/video/SignalForge-Radeon-Demo.mp4)
 - [Final demo cut sheet](docs/demo-script.md)
 - [Evidence and reproduction guide](evidence/README.md)
 - [Radeon Mission Control and container guide](docs/radeon-mission-control.md)
-- [Public Sprint 13 judge-artifact release](https://github.com/rvbernucci/signalforge/releases/tag/sprint13-demo-v1)
+- [Sprint 36 championship artifact release](https://github.com/rvbernucci/signalforge/releases/tag/sprint36-championship-v1)
+- [Sprint 36 artifact manifest](evidence/judge-package.json)
+- [Historical Sprint 34 release attestation](evidence/sprint34-release-attestation.json)
 <!-- evidence-claim:judge-evidence-drafts -->
 
 ![SignalForge local-first architecture](docs/architecture.svg)
 
 ## Status
 
-Foundation under active development. Tag `v1.0.0` remains the immutable, independently
-reproducible hackathon baseline. The current `main` line integrates the post-v1 financial
-intelligence, investor-relations evidence, validation, lineage, and optional hybrid specialist
-work in one reviewable history. New capabilities are not represented as Radeon performance or
-model-quality claims until their dedicated evidence gates pass.
+Tag `v1.1.1` is the forward championship release. Its public `linux/amd64` image adds the verified
+runtime notice bundle and is bound to the current judge artifacts and Sprint 36 Radeon evidence.
+Tag `v1.1.0` remains the immutable Sprint 34 rollback, and `v1.0.0` remains the independently
+reproducible baseline. Native Radeon measurements remain bounded to their recorded workloads and
+are not universal model-quality claims.
 
 - versioned Go contracts for specialist context, deterministic engine requests and receipts, and evaluation evidence;
 - fail-closed validation for unsupported facts, unproven numerical inputs, and failed invariants;
@@ -229,6 +261,19 @@ These are controlled workload results, not universal model-quality claims.
 
 The complete decision, rejected candidates, artifact hashes, and privacy-safe run projections are
 in [`evidence/radeon-optimization.json`](evidence/radeon-optimization.json).
+
+### Bounded Three-Mode Latency Tournament
+
+In a bounded, non-sealed development tournament of eight public journeys per mode, local
+four-worker execution passed 8/8 contracts and achieved a 2.7777x aggregate speedup with a 64.37%
+p50 reduction versus the local two-worker baseline; hybrid four-worker execution passed 8/8 and
+recorded 20 successful Radeon API calls with one failed remote call recovered locally.
+<!-- evidence-claim:sprint33-latency-tournament -->
+
+The result is workload-specific development evidence, not external factual accuracy or universal
+GPU performance. The privacy-safe [aggregate](evidence/sprint33-latency-tournament.json) omits
+prompts, responses, per-case identifiers, excerpts, private reasoning, and credentials. Recompute
+every published delta with `python3 scripts/verify_sprint33_latency_tournament.py`.
 
 ## Adversarial Hardening
 
@@ -352,8 +397,10 @@ journey completed 17 observed calls in 230.222 seconds across the provided Radeo
 authorized local ROCm fallback, while both surfaces displayed the same run and trace identities.
 Four 1280×720 captures and two sanitized journey manifests are hash-bound in
 [`dashboard-radeon-synchronized-captures.json`](evidence/dashboard-radeon-synchronized-captures.json).
-The artifact explicitly records `exact_release_artifact: false`: it closes the synchronized
-working-tree Radeon proof, not the later exact-image promotion gate.
+The artifact explicitly records `exact_release_artifact: false`: it preserves the historical
+Sprint 34 proof without relabeling it. Current Sprint 36 local and hybrid journeys are separately
+recorded in [`sprint36-radeon-local-journey.json`](evidence/sprint36-radeon-local-journey.json) and
+[`sprint36-radeon-hybrid-journey.json`](evidence/sprint36-radeon-hybrid-journey.json).
 
 ![Accepted local Radeon journey with the expandable execution plan](docs/assets/sprint34-radeon-local-plan-expanded-1280x720.jpg)
 
@@ -520,8 +567,11 @@ The optional hybrid specialist path is disabled by default. When enabled, its pr
 model IDs, timeout, and secret location are runtime inputs; no API credential is embedded in the
 repository or binary. See
 [`docs/hybrid-vllm-specialists.md`](docs/hybrid-vllm-specialists.md) for its trust boundary,
-OpenBao-compatible secret mount, local fallback, and evidence requirements. A successful complete
-journey through the organizer-provided endpoint is still required before claiming the vLLM bonus.
+OpenBao-compatible secret mount, local fallback, and evidence requirements. A complete accepted
+journey through the organizer-provided endpoint is recorded in
+[`evidence/sprint34-radeon-runtime.json`](evidence/sprint34-radeon-runtime.json), with correlated
+Workspace and Mission Control proof in
+[`evidence/dashboard-radeon-synchronized-captures.json`](evidence/dashboard-radeon-synchronized-captures.json).
 
 The diagnostic records hardware and runtime capabilities when available. Missing optional ROCm
 commands are reported as unavailable rather than causing the diagnostic to fail. It never reads or

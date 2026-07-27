@@ -6,23 +6,24 @@
 | Team | SignalForge Labs |
 | Application | SignalForge |
 | Team member | Rafael Bernucci - product architecture, financial domain design, evaluation strategy, and release ownership |
-| Championship source | [`032e9c38c4e74a450b38fec8341ed540b6339170`](https://github.com/rvbernucci/signalforge/commit/032e9c38c4e74a450b38fec8341ed540b6339170) |
-| Championship release | [`v1.1.0`](https://github.com/rvbernucci/signalforge/releases/tag/v1.1.0) |
-| Public image | `ghcr.io/rvbernucci/signalforge:v1.1.0` |
-| Image digest | `sha256:1354ccbbbd6138119111e23657ad69c1665f4189d75b9adcdecd53084870a4af` |
+| Championship source | [`bc9c64746589e79766b2b18226ebb9d1d87d2585`](https://github.com/rvbernucci/signalforge/commit/bc9c64746589e79766b2b18226ebb9d1d87d2585) |
+| Championship release | [`v1.1.1`](https://github.com/rvbernucci/signalforge/releases/tag/v1.1.1) |
+| Public image | `ghcr.io/rvbernucci/signalforge:v1.1.1` |
+| Image digest | `sha256:cbac58cf3e62df0404e9ef1cfc7db6aec49e491e4beb5e1f214d6d562fad814b` |
 | Canonical repository | [github.com/rvbernucci/signalforge](https://github.com/rvbernucci/signalforge) |
 | Judge guide | [SignalForge Judge Guide](https://github.com/rvbernucci/signalforge/blob/main/JUDGES.md) |
 
 ## Submission Materials
 
-- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/sprint34-artifacts-v1/SignalForge-Project-Specification.pdf)
-- [4 minute 12.9 second AMD Radeon demo video](https://github.com/rvbernucci/signalforge/releases/download/sprint34-artifacts-v1/SignalForge-Radeon-Demo.mp4)
-- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/sprint34-artifacts-v1/SignalForge-Judge-Deck.pptx)
-- [Architecture diagram](https://github.com/rvbernucci/signalforge/releases/download/sprint34-artifacts-v1/architecture.svg)
+- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Project-Specification.pdf)
+- [4 minute 44.9 second AMD Radeon demo video](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Radeon-Demo.mp4)
+- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Judge-Deck.pptx)
+- [Architecture diagram](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/architecture.svg)
 - [Track 2 compliance matrix](https://github.com/rvbernucci/signalforge/blob/main/docs/track2-compliance.md)
-- [Exact release attestation](https://github.com/rvbernucci/signalforge/blob/main/evidence/sprint34-release-attestation.json)
+- [Exact release attestation](https://github.com/rvbernucci/signalforge/blob/main/evidence/sprint36-release-attestation.json)
+- [Exact-release Radeon journey](https://github.com/rvbernucci/signalforge/blob/main/evidence/sprint36-exact-release-radeon-journey.json)
 
-The complete immutable `v1.1.0` source snapshot, documentation, deterministic fixtures, tests,
+The complete immutable `v1.1.1` source snapshot, documentation, deterministic fixtures, tests,
 evidence, PDF, deck, and video are included under `source/`.
 
 ## Product
@@ -75,10 +76,11 @@ SignalForge implements all five capability families listed by Track 2.
   attention `auto`.
 - Workload result: 44/44 frozen semantic checks in 157.47 seconds, 29.17% faster end to end than
   the passing three-worker control.
-- Local Sprint 34 journey: all 12 terminal steps across eight governed phases, 11 local ROCm calls,
-  and an accepted release.
-- Hybrid Sprint 34 journey: all 12 terminal steps, 17 calls across `radeon-vllm` and `local-rocm`,
-  local review/synthesis, and tested API-loss fallback.
+- The exact `v1.1.1` image was anonymously pulled and read back on Radeon Cloud. Its complete hybrid
+  journey reached all 12 terminal steps with eight local ROCm and eight Radeon API calls; two
+  remote failures recovered before answer release.
+- A separate eight-journey-per-mode development tournament measured `2.7777x` aggregate local
+  speedup with four workers versus the two-worker baseline; all eight hybrid journeys also passed.
 
 These are bounded, hash-backed workload results, not universal accuracy or performance claims.
 
@@ -88,7 +90,7 @@ The deterministic fixture requires no GPU, API key, model download, database set
 data call:
 
 ```bash
-git clone --branch v1.1.0 --depth 1 https://github.com/rvbernucci/signalforge.git
+git clone --branch v1.1.1 --depth 1 https://github.com/rvbernucci/signalforge.git
 cd signalforge
 npm --prefix web ci
 npm --prefix web run build
@@ -103,7 +105,7 @@ Pull the exact application image by digest:
 
 ```bash
 docker pull \
-  ghcr.io/rvbernucci/signalforge@sha256:1354ccbbbd6138119111e23657ad69c1665f4189d75b9adcdecd53084870a4af
+  ghcr.io/rvbernucci/signalforge@sha256:cbac58cf3e62df0404e9ef1cfc7db6aec49e491e4beb5e1f214d6d562fad814b
 ```
 
 ## Release Integrity
@@ -113,7 +115,7 @@ model weights, private corpora, or startup downloads. The container workflow pro
 provenance, passed a Trivy HIGH/CRITICAL scan, and verified an anonymous digest pull plus clean
 fixture execution.
 
-The source snapshot is frozen at `v1.1.0`. The two files beside this README,
+The source snapshot is frozen at `v1.1.1`. The two files beside this README,
 `release-checklist-final.json` and `sg05-attestation.json`, bind the exact source, image, workflows,
 judge artifacts, human decisions, and release authorization. Artifact hashes are listed in
 `SHA256SUMS`.
