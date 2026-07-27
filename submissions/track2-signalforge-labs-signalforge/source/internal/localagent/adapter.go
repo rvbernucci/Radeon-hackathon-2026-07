@@ -13,9 +13,12 @@ import (
 
 	"github.com/rvbernucci/signalforge/internal/benchmark"
 	"github.com/rvbernucci/signalforge/internal/contracts"
+	"github.com/rvbernucci/signalforge/internal/engine"
 	"github.com/rvbernucci/signalforge/internal/orchestrator"
 	"github.com/rvbernucci/signalforge/internal/roles"
 )
+
+const maxModelResponseBytes = 1 << 20
 
 type Completer interface {
 	Complete(context.Context, benchmark.Request) (benchmark.Completion, error)
@@ -26,6 +29,15 @@ type Material struct {
 	ToolReceipts        []contracts.ToolReceipt        `json:"tool_receipts,omitempty"`
 	CalculationReceipts []contracts.CalculationReceipt `json:"calculation_receipts,omitempty"`
 	NumericalContext    *contracts.NumericalContext    `json:"numerical_context,omitempty"`
+	Retrieval           RetrievalTrace                 `json:"-"`
+}
+
+type RetrievalTrace struct {
+	Method                 string
+	CandidateCount         int
+	SelectedCandidateCount int
+	RejectedCandidateCount int
+	CandidateCountsKnown   bool
 }
 
 type calculationInputView struct {
@@ -106,10 +118,15 @@ type Adapters struct {
 }
 
 func New(client Completer, model string, materials MaterialProvider) (*Adapters, error) {
+	return NewWithPromptRegistry(client, model, materials, DefaultPromptRegistry())
+}
+
+// NewWithPromptRegistry is reserved for hash-pinned evaluation candidates. Production callers use
+// New, which always constructs the frozen default registry.
+func NewWithPromptRegistry(client Completer, model string, materials MaterialProvider, prompts PromptRegistry) (*Adapters, error) {
 	if client == nil || strings.TrimSpace(model) == "" || materials == nil {
 		return nil, errors.New("local model client, model ID, and material provider are required")
 	}
-	prompts := DefaultPromptRegistry()
 	if err := prompts.Validate(roles.DefaultRegistry()); err != nil {
 		return nil, err
 	}
@@ -127,6 +144,25 @@ type packetBody struct {
 }
 
 func (adapters *Adapters) Run(ctx context.Context, request contracts.ContextRequest) (contracts.ContextPacket, error) {
+	return adapters.run(ctx, request, nil, 0)
+}
+
+func (adapters *Adapters) RunAttempt(ctx context.Context, request contracts.ContextRequest, attempt int) (contracts.ContextPacket, error) {
+	return adapters.run(ctx, request, nil, attempt)
+}
+
+func (adapters *Adapters) RunObserved(ctx context.Context, request contracts.ContextRequest, observer orchestrator.SpecialistLifecycleObserver) (contracts.ContextPacket, error) {
+	return adapters.run(ctx, request, observer, 0)
+}
+
+func (adapters *Adapters) RunObservedAttempt(ctx context.Context, request contracts.ContextRequest, observer orchestrator.SpecialistLifecycleObserver, attempt int) (contracts.ContextPacket, error) {
+	return adapters.run(ctx, request, observer, attempt)
+}
+
+func (adapters *Adapters) run(ctx context.Context, request contracts.ContextRequest, observer orchestrator.SpecialistLifecycleObserver, attempt int) (contracts.ContextPacket, error) {
+	if attempt < 0 || attempt > 1 {
+		return contracts.ContextPacket{}, fmt.Errorf("specialist attempt %d is outside the bounded retry contract", attempt)
+	}
 	if err := contracts.ValidateContextRequest(request); err != nil {
 		return contracts.ContextPacket{}, err
 	}
@@ -134,16 +170,43 @@ func (adapters *Adapters) Run(ctx context.Context, request contracts.ContextRequ
 	if !ok {
 		return contracts.ContextPacket{}, fmt.Errorf("no prompt for role %q", request.SpecialistRole)
 	}
+	if attempt == 1 {
+		prompt.MaxTokens *= 2
+		if prompt.MaxTokens > 3200 {
+			prompt.MaxTokens = 3200
+		}
+	}
 	role, ok := roles.DefaultRegistry().Get(request.SpecialistRole)
 	if !ok || role.Class != roles.ClassContext {
 		return contracts.ContextPacket{}, fmt.Errorf("role %q is not a context specialist", request.SpecialistRole)
 	}
+	retrieval := orchestrator.RetrievalLifecycle{RetrievalID: "retrieval-" + request.ContextRequestID}
+	if observer != nil {
+		observer.RetrievalStarted(retrieval)
+		ctx = context.WithValue(ctx, lifecycleObserverContextKey{}, observer)
+	}
 	material, err := adapters.Materials.Load(ctx, request)
 	if err != nil {
+		if observer != nil {
+			retrieval.FailureCode = retrievalFailureCode(err, "material_load_failed")
+			observer.RetrievalFailed(retrieval)
+		}
 		return contracts.ContextPacket{}, fmt.Errorf("load context material: %w", err)
 	}
 	if err := validateMaterial(material, request); err != nil {
+		if observer != nil {
+			retrieval.FailureCode = retrievalFailureCode(err, "evidence_contract_failed")
+			observer.RetrievalFailed(retrieval)
+		}
 		return contracts.ContextPacket{}, err
+	}
+	if observer != nil {
+		retrieval = retrievalLifecycle(request, material)
+		if len(material.Evidence.Missing) > 0 {
+			observer.RetrievalDegraded(retrieval)
+		} else {
+			observer.RetrievalPassed(retrieval)
+		}
 	}
 	input, err := json.Marshal(struct {
 		Request  contracts.ContextRequest `json:"context_request"`
@@ -175,6 +238,10 @@ func (adapters *Adapters) Run(ctx context.Context, request contracts.ContextRequ
 			return contracts.ContextPacket{}, fmt.Errorf("decode context packet body after bounded truncation retry: %w", err)
 		}
 	}
+	return buildContextPacket(request, material, body)
+}
+
+func buildContextPacket(request contracts.ContextRequest, material Material, body packetBody) (contracts.ContextPacket, error) {
 	packet := contracts.ContextPacket{
 		SchemaVersion: contracts.SchemaVersionV1, PacketID: "packet-" + request.ContextRequestID,
 		RunID: request.RunID, StepID: request.StepID, SpecialistRole: request.SpecialistRole,
@@ -200,11 +267,15 @@ func (adapters *Adapters) Run(ctx context.Context, request contracts.ContextRequ
 	quarantineStructurallyInvalidClaims(&packet)
 	quarantineUnauthorizedClaims(&packet, material)
 	appendSourceBackedRiskCounterevidence(&packet, material)
+	appendSourceBackedBusinessFacts(&packet, material)
 	appendScopeBoundaryFindings(&packet, material)
+	appendAccountingAuthorityFindings(&packet, material)
+	appendGovernedAbstentionFindings(&packet, material, request)
 	appendMarketPriceFindings(&packet, material)
 	if request.SpecialistRole == roles.EconomicsTransmission {
 		appendCanonicalTransmissionHypotheses(&packet, request.Assumptions)
 	}
+	appendDeterministicNumericalVariableFindings(&packet, material.NumericalContext)
 	appendDeterministicNumericalRelationFindings(&packet, material.NumericalContext)
 	if request.SpecialistRole == roles.Valuation {
 		appendMissingValuationReceiptFindings(&packet, material.CalculationReceipts, material.NumericalContext)
@@ -216,11 +287,16 @@ func (adapters *Adapters) Run(ctx context.Context, request contracts.ContextRequ
 	for index := range packet.Counterevidence {
 		packet.Counterevidence[index].ValidAsOf = request.Scope.AsOf
 	}
+	quarantineModelSemanticViolations(&packet)
+	var err error
 	packet.Evidence, packet.CalculationReceipts, packet.NumericalContext, err = authorizePacketReferences(packet, material)
 	if err != nil {
 		return contracts.ContextPacket{}, err
 	}
 	if err := contracts.ValidateContextPacket(packet); err != nil {
+		return contracts.ContextPacket{}, err
+	}
+	if err := validateSpecialistSemantics(packet); err != nil {
 		return contracts.ContextPacket{}, err
 	}
 	return packet, nil
@@ -235,7 +311,7 @@ func appendCanonicalTransmissionHypotheses(packet *contracts.ContextPacket, assu
 		if assumption == "" {
 			continue
 		}
-		statement := "Under the explicit request scenario, operating and valuation outcomes may differ; direction and magnitude require evidence."
+		statement := "Under the explicit request scenario, the stated variable could affect operating and valuation outcomes through financing, demand, or discount-rate channels; direction and magnitude require evidence."
 		lower := strings.ToLower(assumption)
 		switch {
 		case strings.Contains(lower, "interest rate") || strings.Contains(lower, "higher-for-longer"):
@@ -309,6 +385,76 @@ func appendScopeBoundaryFindings(packet *contracts.ContextPacket, material Mater
 	}
 }
 
+func appendAccountingAuthorityFindings(packet *contracts.ContextPacket, material Material) {
+	if packet.SpecialistRole != roles.AccountingReporting {
+		return
+	}
+	for _, item := range material.Evidence.Items {
+		if item.State != contracts.EvidenceAvailable ||
+			item.EvidenceRef.SourceType != "accounting_authority_policy" {
+			continue
+		}
+		packet.Findings = append(packet.Findings, contracts.Finding{
+			ClaimType: contracts.ClaimFact, Origin: contracts.FindingOriginSourceExtraction,
+			Statement:    strings.TrimSpace(item.Statement),
+			EvidenceRefs: []string{item.EvidenceRef.EvidenceID},
+			Confidence:   1,
+		})
+	}
+}
+
+func appendGovernedAbstentionFindings(
+	packet *contracts.ContextPacket,
+	material Material,
+	request contracts.ContextRequest,
+) {
+	counterevidenceRequested := researchQuestionRequestsCounterevidence(request.ResearchQuestion)
+	for _, item := range material.Evidence.Items {
+		if item.State != contracts.EvidenceAvailable ||
+			item.EvidenceRef.SourceType != "product_scope_policy" ||
+			!contains(item.Warnings, "scope_boundary_only") {
+			continue
+		}
+		finding := contracts.Finding{
+			ClaimType: contracts.ClaimFact, Origin: contracts.FindingOriginSourceExtraction,
+			Statement:    strings.TrimSpace(item.Statement),
+			EvidenceRefs: []string{item.EvidenceRef.EvidenceID},
+			Confidence:   1,
+		}
+		// A counterevidence answer contract still needs an approved claim when the governed
+		// disposition is "unavailable". Put one source-backed abstention on that channel rather
+		// than asking the model to invent disconfirming evidence or failing synthesis.
+		if counterevidenceRequested && len(packet.Counterevidence) == 0 {
+			packet.Counterevidence = append(packet.Counterevidence, finding)
+			continue
+		}
+		packet.Findings = append(packet.Findings, finding)
+	}
+}
+
+func researchQuestionRequestsCounterevidence(question string) bool {
+	lower := strings.ToLower(question)
+	if strings.Contains(lower, "challenge") && strings.Contains(lower, "thesis") {
+		return true
+	}
+	for _, phrase := range []string{
+		"counterevidence",
+		"counter-evidence",
+		"challenge the thesis",
+		"challenge my thesis",
+		"invalidate the thesis",
+		"would invalidate",
+		"could invalidate",
+		"weakens the thesis",
+		"weaken the thesis",
+	} {
+		if strings.Contains(lower, phrase) {
+			return true
+		}
+	}
+	return false
+}
+
 func appendMarketPriceFindings(packet *contracts.ContextPacket, material Material) {
 	if packet.SpecialistRole != roles.MarketBehavior {
 		return
@@ -370,6 +516,83 @@ func isSECItem1ARiskSection(section string) bool {
 	return strings.HasPrefix(normalized, "item 1a") && strings.Contains(normalized, "risk")
 }
 
+// Item 1 business descriptions are issuer-authored facts. Carrying a bounded exact extraction for
+// each available issuer prevents a contrarian review from replacing business-model authority with
+// an unrelated risk disclosure merely because model-authored prose was narrowed.
+func appendSourceBackedBusinessFacts(packet *contracts.ContextPacket, material Material) {
+	if packet.SpecialistRole != roles.BusinessStrategy {
+		return
+	}
+	candidates := make([]contracts.EvidenceItem, 0)
+	for _, item := range material.Evidence.Items {
+		statement := strings.TrimSpace(item.Statement)
+		if evidenceIsQuarantined(item) || item.State != contracts.EvidenceAvailable ||
+			!isSECItem1BusinessSection(item.EvidenceRef.DocumentSection) ||
+			statement == "" || containsAuthoritativeNumericalLiteral(statement) {
+			continue
+		}
+		candidates = append(candidates, item)
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].EvidenceRef.EvidenceID < candidates[j].EvidenceRef.EvidenceID
+	})
+	for _, item := range candidates {
+		packet.Findings = append(packet.Findings, contracts.Finding{
+			ClaimType:    contracts.ClaimFact,
+			Origin:       contracts.FindingOriginSourceExtraction,
+			Statement:    strings.TrimSpace(item.Statement),
+			EvidenceRefs: []string{item.EvidenceRef.EvidenceID},
+			Confidence:   1,
+		})
+	}
+}
+
+func isSECItem1BusinessSection(section string) bool {
+	normalized := strings.ToLower(strings.Join(strings.Fields(section), " "))
+	return strings.HasPrefix(normalized, "item 1") &&
+		!strings.HasPrefix(normalized, "item 1a") &&
+		strings.Contains(normalized, "business")
+}
+
+func appendDeterministicNumericalVariableFindings(packet *contracts.ContextPacket, numerical *contracts.NumericalContext) {
+	if numerical == nil {
+		return
+	}
+	used := map[string]bool{}
+	for _, finding := range append(append([]contracts.Finding(nil), packet.Findings...), packet.Counterevidence...) {
+		if finding.Origin != contracts.FindingOriginDeterministic {
+			continue
+		}
+		for _, numericalID := range finding.NumericalRefs {
+			used[numericalID] = true
+		}
+	}
+	inRelation := map[string]bool{}
+	for _, relation := range numerical.Relations {
+		inRelation[relation.LeftVariableID] = true
+		inRelation[relation.RightVariableID] = true
+	}
+	for _, variable := range numerical.Variables {
+		if used[variable.VariableID] || inRelation[variable.VariableID] {
+			continue
+		}
+		label := variable.EntityLabel
+		if label == "" {
+			label = variable.EntityID
+		}
+		packet.Findings = append(packet.Findings, contracts.Finding{
+			ClaimType: contracts.ClaimCalculation, Origin: contracts.FindingOriginDeterministic,
+			Statement: fmt.Sprintf(
+				"A deterministic %s result for %s is available for presentation by the trusted numerical renderer.",
+				modelFacingMetricLabel(variable.MetricID), label,
+			),
+			CalculationRefs: append([]string(nil), variable.ReceiptRefs...),
+			NumericalRefs:   []string{variable.VariableID},
+			Confidence:      1,
+		})
+	}
+}
+
 func appendDeterministicNumericalRelationFindings(packet *contracts.ContextPacket, numerical *contracts.NumericalContext) {
 	if numerical == nil {
 		return
@@ -391,7 +614,7 @@ func appendDeterministicNumericalRelationFindings(packet *contracts.ContextPacke
 			ClaimType: contracts.ClaimCalculation, Origin: contracts.FindingOriginDeterministic,
 			Statement: fmt.Sprintf(
 				"A deterministic %s relation is available for presentation by the trusted numerical renderer.",
-				relation.MetricID,
+				modelFacingMetricLabel(relation.MetricID),
 			),
 			CalculationRefs: append([]string(nil), relation.ReceiptRefs...),
 			NumericalRefs:   []string{relation.RelationID},
@@ -509,7 +732,7 @@ func appendMissingValuationReceiptFindings(packet *contracts.ContextPacket, rece
 				ClaimType: contracts.ClaimCalculation, Origin: contracts.FindingOriginDeterministic,
 				Statement: fmt.Sprintf(
 					"A deterministic %s comparison is available for presentation by the trusted numerical renderer.",
-					relation.MetricID,
+					modelFacingMetricLabel(relation.MetricID),
 				),
 				CalculationRefs: relationReceipts,
 				NumericalRefs:   []string{relation.RelationID},
@@ -535,10 +758,19 @@ func appendMissingValuationReceiptFindings(packet *contracts.ContextPacket, rece
 		packet.Findings = append(packet.Findings, contracts.Finding{
 			ClaimType:       contracts.ClaimCalculation,
 			Origin:          contracts.FindingOriginDeterministic,
-			Statement:       fmt.Sprintf("A deterministic %s result is available for presentation by the trusted numerical renderer.", receipt.OperationID),
+			Statement:       fmt.Sprintf("A deterministic %s result is available for presentation by the trusted numerical renderer.", modelFacingMetricLabel(receipt.OperationID)),
 			CalculationRefs: []string{receipt.ReceiptID}, NumericalRefs: numericalRefs, Confidence: 1,
 		})
 	}
+}
+
+func modelFacingMetricLabel(metricID string) string {
+	parts := strings.Split(strings.TrimSpace(metricID), ".")
+	label := strings.ReplaceAll(parts[len(parts)-1], "_", " ")
+	if strings.EqualFold(label, "fcff dcf") {
+		return "FCFF DCF"
+	}
+	return label
 }
 
 func isRequiredValuationReceipt(operationID string) bool {
@@ -824,13 +1056,147 @@ func structuralClaimReason(finding contracts.Finding) string {
 
 func (adapters *Adapters) complete(ctx context.Context, prompt Prompt, input string) (benchmark.Completion, error) {
 	seed := 42
+	chatTemplateKwargs, thinking := modelGenerationControls(adapters.Model)
 	return adapters.Client.Complete(ctx, benchmark.Request{
 		Model:     adapters.Model,
 		Messages:  []benchmark.Message{{Role: "system", Content: prompt.System}, {Role: "user", Content: input}},
 		MaxTokens: prompt.MaxTokens, Temperature: prompt.Temperature, Seed: &seed,
 		ResponseFormat:     prompt.ResponseFormat(),
-		ChatTemplateKwargs: map[string]any{"enable_thinking": false},
+		ChatTemplateKwargs: chatTemplateKwargs,
+		Thinking:           thinking,
 	})
+}
+
+func modelGenerationControls(model string) (map[string]any, map[string]any) {
+	if strings.Contains(strings.ToLower(model), "deepseek") {
+		return nil, map[string]any{"type": "disabled"}
+	}
+	return map[string]any{"enable_thinking": false}, nil
+}
+
+type lifecycleObserverContextKey struct{}
+
+func retrievalLifecycle(request contracts.ContextRequest, material Material) orchestrator.RetrievalLifecycle {
+	sourceSet := map[string]bool{}
+	for _, item := range material.Evidence.Items {
+		sourceType := strings.TrimSpace(item.EvidenceRef.SourceType)
+		if sourceType != "" {
+			sourceSet[sourceType] = true
+		}
+	}
+	sourceClasses := make([]string, 0, len(sourceSet))
+	for sourceType := range sourceSet {
+		sourceClasses = append(sourceClasses, sourceType)
+	}
+	sort.Strings(sourceClasses)
+	return orchestrator.RetrievalLifecycle{
+		RetrievalID:            "retrieval-" + request.ContextRequestID,
+		BundleID:               material.Evidence.BundleID,
+		Method:                 material.Retrieval.Method,
+		EvidenceCount:          len(material.Evidence.Items),
+		SourceClasses:          sourceClasses,
+		AsOf:                   material.Evidence.AsOf,
+		MissingEvidenceCount:   len(material.Evidence.Missing),
+		CandidateCount:         material.Retrieval.CandidateCount,
+		SelectedCandidateCount: material.Retrieval.SelectedCandidateCount,
+		RejectedCandidateCount: material.Retrieval.RejectedCandidateCount,
+		CandidateCountsKnown:   material.Retrieval.CandidateCountsKnown,
+	}
+}
+
+func retrievalFailureCode(err error, fallback string) string {
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return "retrieval_deadline_exceeded"
+	case errors.Is(err, context.Canceled):
+		return "retrieval_cancelled"
+	default:
+		return fallback
+	}
+}
+
+// ObserveToolStarted, ObserveToolPassed, and ObserveToolFailed bridge deterministic engines to the
+// optional orchestration observer without exposing values or source bodies.
+func ObserveToolStarted(ctx context.Context, request contracts.EngineRequest) {
+	if observer := lifecycleObserver(ctx); observer != nil {
+		observer.ToolStarted(toolLifecycleFromRequest(request))
+	}
+}
+
+func ObserveToolPassed(ctx context.Context, receipt contracts.CalculationReceipt) {
+	if observer := lifecycleObserver(ctx); observer != nil {
+		observer.ToolPassed(toolLifecycleFromReceipt(receipt))
+	}
+}
+
+func ObserveToolFailed(ctx context.Context, request contracts.EngineRequest, code string) {
+	if observer := lifecycleObserver(ctx); observer != nil {
+		lifecycle := toolLifecycleFromRequest(request)
+		lifecycle.FailureCode = code
+		observer.ToolFailed(lifecycle)
+	}
+}
+
+func lifecycleObserver(ctx context.Context) orchestrator.SpecialistLifecycleObserver {
+	if ctx == nil {
+		return nil
+	}
+	observer, _ := ctx.Value(lifecycleObserverContextKey{}).(orchestrator.SpecialistLifecycleObserver)
+	return observer
+}
+
+func toolLifecycleFromRequest(request contracts.EngineRequest) orchestrator.ToolLifecycle {
+	inputIDs := make([]string, 0, len(request.Inputs))
+	for _, input := range request.Inputs {
+		inputIDs = append(inputIDs, input.InputID)
+	}
+	return orchestrator.ToolLifecycle{
+		ToolExecutionID: request.RequestID,
+		EngineID:        request.EngineID,
+		OperationID:     request.OperationID,
+		FormulaVersion:  request.FormulaVersion,
+		InputRefIDs:     inputIDs,
+		InputCount:      len(request.Inputs),
+		OutputCount:     len(request.RequestedOutputs),
+	}
+}
+
+func toolLifecycleFromReceipt(receipt contracts.CalculationReceipt) orchestrator.ToolLifecycle {
+	inputIDs := make([]string, 0, len(receipt.NormalizedInputs))
+	for _, input := range receipt.NormalizedInputs {
+		inputIDs = append(inputIDs, input.InputID)
+	}
+	outputIDs := make([]string, 0, len(receipt.Outputs))
+	for _, output := range receipt.Outputs {
+		outputIDs = append(outputIDs, output.OutputID)
+	}
+	invariantsPassed := true
+	for _, invariant := range receipt.InvariantResults {
+		if !invariant.Passed {
+			invariantsPassed = false
+			break
+		}
+	}
+	verification := "metadata_only"
+	if engine.VerifyReceipt(receipt) == nil {
+		verification = "canonical_verified"
+	}
+	return orchestrator.ToolLifecycle{
+		ToolExecutionID:     receipt.RequestID,
+		ReceiptID:           receipt.ReceiptID,
+		ReceiptSHA:          receipt.ReceiptSHA,
+		ReceiptVerification: verification,
+		EngineID:            receipt.EngineID,
+		OperationID:         receipt.OperationID,
+		FormulaVersion:      receipt.FormulaVersion,
+		InputRefIDs:         inputIDs,
+		OutputRefIDs:        outputIDs,
+		InputCount:          len(receipt.NormalizedInputs),
+		OutputCount:         len(receipt.Outputs),
+		InvariantCount:      len(receipt.InvariantResults),
+		InvariantsPassed:    invariantsPassed,
+		WarningCount:        len(receipt.Warnings),
+	}
 }
 
 func validateMaterial(material Material, request contracts.ContextRequest) error {
@@ -1009,6 +1375,9 @@ func contains(values []string, target string) bool {
 }
 
 func decodeJSONObject(payload string, destination any) error {
+	if len(payload) > maxModelResponseBytes {
+		return fmt.Errorf("model response exceeds %d-byte contract", maxModelResponseBytes)
+	}
 	trimmed := strings.TrimSpace(payload)
 	if strings.HasPrefix(trimmed, "```") {
 		firstNewline := strings.IndexByte(trimmed, '\n')
@@ -1034,3 +1403,4 @@ func decodeJSONObject(payload string, destination any) error {
 }
 
 var _ orchestrator.Specialist = (*Adapters)(nil)
+var _ orchestrator.ObservedSpecialist = (*Adapters)(nil)

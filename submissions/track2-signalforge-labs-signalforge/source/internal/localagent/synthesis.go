@@ -120,7 +120,24 @@ func (adapters *Adapters) Synthesize(ctx context.Context, input orchestrator.Syn
 	placeApprovedCounterevidenceClaims(body.Sections, material.Claims)
 	canonicalizeRequestedAssumptions(&body, material)
 	placeRequiredSemanticAuthority(body.Sections, material)
-	draftErr := validateNumericallySilentDraft(body)
+	placeApprovedNumericalClaims(body.Sections, material.Claims)
+	normalizeApplicationOwnedSectionAuthority(body.Sections, material.Claims)
+	repairReceiptAvailabilityClaims(&body, material)
+	neutralizeInternalReferenceMentions(&body, material)
+	ensureVisibleComparisonBoundary(&body, material)
+	neutralizeUnsupportedCausalAttribution(&body)
+	draftErr := validateRequestedSectionSet(body.Sections, input.Request.RequestedOutputs)
+	if draftErr == nil {
+		draftErr = validateNumericallySilentDraft(body)
+		if draftErr != nil {
+			// Numerical Silence is Go-owned: safely narrow model-authored numerical prose before
+			// spending a second inference. Every remaining semantic and authority contract below
+			// is still revalidated, and an unrepairable draft remains fail-closed.
+			if repairErr := repairAuthorizedNumericalDraft(&body, material); repairErr == nil {
+				draftErr = validateNumericallySilentDraft(body)
+			}
+		}
+	}
 	if draftErr == nil {
 		draftErr = validateRequiredDecisionSections(body, input.Request.RequestedOutputs, material.Claims)
 	}
@@ -144,7 +161,7 @@ func (adapters *Adapters) Synthesize(ctx context.Context, input orchestrator.Syn
 			return contracts.FinalAnswer{}, draftErr
 		}
 		retryPrompt := prompt
-		retryPrompt.System += " The previous semantic draft was rejected by application code. On this single bounded repair, use qualitative language, normal English spelling, and approved claim_refs only. Do not repeat, mask, replace, or paraphrase any number; Go will render every authorized quantity after synthesis. Do not state which company has a higher, lower, greater, or smaller financial metric, valuation, price, return, margin, growth rate, cash flow, or multiple; select the approved claim_refs and let Go render direction. Never say that DCF, sensitivity, multiples, or another calculation is missing when a corresponding calculation_receipt is present. When counterevidence or invalidation_conditions is requested, each section must cite at least one approved claim whose disposition is counterevidence. State an explicit testable invalidation condition without inventing a numerical threshold. A comparison section must cite approved business-strategy, accounting-reporting, and financial-quality claims. A transmission_mechanisms section must cite an approved economics-transmission claim. A market_measurement section must cite an approved market-behavior claim. A scenarios section must cite both an approved valuation claim and an approved scenario-grounded economics-transmission claim. In transmission_mechanisms and market_measurement, never use caused, causes, resulted from, resulted in, because of, or due to. Never claim that correlation, co-movement, or timing proves causality. Never tell the user to buy, sell, or hold a security and never promise a return, profit, upside, or certainty."
+		retryPrompt.System += " The previous semantic draft was rejected by application code. On this single bounded repair, return every requested section_type exactly once, with no duplicates and no additional section types. Use qualitative language, normal English spelling, and approved claim_refs only. Do not repeat, mask, replace, or paraphrase any number; Go will render every authorized quantity after synthesis. Do not state which company has a higher, lower, greater, or smaller financial metric, valuation, price, return, margin, growth rate, cash flow, or multiple; select the approved claim_refs and let Go render direction. Never say that DCF, sensitivity, multiples, or another calculation is missing when a corresponding calculation_receipt is present. When counterevidence or invalidation_conditions is requested, each section must cite at least one approved claim whose disposition is counterevidence. State an explicit testable invalidation condition without inventing a numerical threshold. A comparison section must cite approved business-strategy, accounting-reporting, and financial-quality claims. A transmission_mechanisms section must cite an approved economics-transmission claim. A market_measurement section must cite an approved market-behavior claim. A scenarios section must cite both an approved valuation claim and an approved scenario-grounded economics-transmission claim. In transmission_mechanisms and market_measurement, never use caused, causes, resulted from, resulted in, because of, or due to. Never claim that correlation, co-movement, or timing proves causality. Never tell the user to buy, sell, or hold a security and never promise a return, profit, upside, or certainty."
 		completion, err = adapters.complete(ctx, retryPrompt, string(payload))
 		if err != nil {
 			return contracts.FinalAnswer{}, err
@@ -156,8 +173,24 @@ func (adapters *Adapters) Synthesize(ctx context.Context, input orchestrator.Syn
 		placeApprovedCounterevidenceClaims(body.Sections, material.Claims)
 		canonicalizeRequestedAssumptions(&body, material)
 		placeRequiredSemanticAuthority(body.Sections, material)
+		placeApprovedNumericalClaims(body.Sections, material.Claims)
+		normalizeApplicationOwnedSectionAuthority(body.Sections, material.Claims)
+		repairReceiptAvailabilityClaims(&body, material)
+		neutralizeInternalReferenceMentions(&body, material)
+		ensureVisibleComparisonBoundary(&body, material)
+		neutralizeUnsupportedCausalAttribution(&body)
+		if err := validateRequestedSectionSet(body.Sections, input.Request.RequestedOutputs); err != nil {
+			if repairErr := repairApplicationOwnedSectionSet(&body, input.Request.RequestedOutputs, material.Claims); repairErr != nil {
+				return contracts.FinalAnswer{}, fmt.Errorf("final answer after bounded section-set retry: %w", err)
+			}
+		}
 		if err := validateNumericallySilentDraft(body); err != nil {
-			return contracts.FinalAnswer{}, fmt.Errorf("final answer after bounded numerical-silence retry: %w", err)
+			if repairErr := repairAuthorizedNumericalDraft(&body, material); repairErr != nil {
+				return contracts.FinalAnswer{}, fmt.Errorf("final answer after bounded numerical-silence retry: %w", err)
+			}
+			if err := validateNumericallySilentDraft(body); err != nil {
+				return contracts.FinalAnswer{}, fmt.Errorf("final answer after deterministic numerical-silence repair: %w", err)
+			}
 		}
 		if err := validateRequiredDecisionSections(body, input.Request.RequestedOutputs, material.Claims); err != nil {
 			return contracts.FinalAnswer{}, fmt.Errorf("final answer after bounded decision-section retry: %w", err)
@@ -231,6 +264,15 @@ func placeRequiredSemanticAuthority(sections []answerSectionDraft, material synt
 		}
 		return byRole[roleID][0].Finding.ClaimID
 	}
+	firstSupported := func(roleID string) string {
+		for _, claim := range byRole[roleID] {
+			finding := claim.Finding
+			if len(finding.EvidenceRefs)+len(finding.CalculationRefs)+len(finding.NumericalRefs) > 0 {
+				return finding.ClaimID
+			}
+		}
+		return ""
+	}
 	claimByEvidence := func(match func(string) bool) string {
 		for _, claim := range material.Claims {
 			for _, evidenceID := range claim.Finding.EvidenceRefs {
@@ -261,13 +303,24 @@ func placeRequiredSemanticAuthority(sections []answerSectionDraft, material synt
 		case "transmission_mechanisms":
 			appendRef(section, first(roles.EconomicsTransmission))
 			appendRef(section, macroAuthority)
+			appendRef(section, firstSupported(roles.EconomicsTransmission))
 			section.Content = appendSentence(section.Content, "Transmission is presented as a conditional scenario mechanism.")
 			section.Content = appendSentence(section.Content, "Macro transmission remains anchored to issuer-disclosed currency, rate, export-control, or supply-chain risk.")
 		case "market_measurement":
 			appendRef(section, first(roles.MarketBehavior))
 			section.Content = appendSentence(section.Content, "Market observations are measurements, not causal attributions.")
+		case "valuation_range", "sensitivity":
+			appendRef(section, firstSupported(roles.Valuation))
+			section.Content = appendSentence(section.Content, "Valuation outputs remain bounded by available source authority and Go-validated calculation receipts.")
 		case "scenarios":
-			appendRef(section, first(roles.Valuation))
+			if material.Request.PrimaryIntent == "economic_transmission" {
+				appendRef(section, first(roles.EconomicsTransmission))
+				appendRef(section, firstSupported(roles.EconomicsTransmission))
+				section.Content = appendSentence(section.Content, "Scenarios remain conditional on approved economic-transmission mechanisms.")
+			} else {
+				appendRef(section, first(roles.Valuation))
+				section.Content = appendSentence(section.Content, "Scenario ranges combine Go-validated valuation receipts with the explicit macro assumptions.")
+			}
 			appendRef(section, macroAuthority)
 			for _, assumption := range material.Request.Assumptions {
 				for _, claim := range byRole[roles.EconomicsTransmission] {
@@ -277,7 +330,6 @@ func placeRequiredSemanticAuthority(sections []answerSectionDraft, material synt
 					}
 				}
 			}
-			section.Content = appendSentence(section.Content, "Scenario ranges combine Go-validated valuation receipts with the explicit macro assumptions.")
 		}
 	}
 }
@@ -291,6 +343,29 @@ func appendSentence(content, sentence string) string {
 		return content
 	}
 	return content + " " + sentence
+}
+
+const comparisonBoundaryDisclosure = "Direct cross-company conclusions are limited to measures with aligned definitions and fiscal periods; unavailable or not-comparable measures remain withheld."
+
+// Comparability authority is computed by Go before synthesis. When the request is explicitly
+// comparative, publish that already-validated boundary deterministically instead of relying on
+// the model to repeat it in every answer shape.
+func ensureVisibleComparisonBoundary(body *finalBody, material synthesisPromptInput) {
+	question := strings.ToLower(material.Request.Question)
+	comparative := strings.Contains(question, "compare") ||
+		strings.Contains(question, "comparison") ||
+		strings.Contains(question, "relative-quality") ||
+		strings.Contains(question, "cross-company") ||
+		strings.Contains(question, "peer")
+	if !comparative {
+		return
+	}
+	for _, limitation := range body.Limitations {
+		if limitation == comparisonBoundaryDisclosure {
+			return
+		}
+	}
+	body.Limitations = append(body.Limitations, comparisonBoundaryDisclosure)
 }
 
 func placeApprovedNumericalClaims(sections []answerSectionDraft, claims []synthesisClaimView) {
@@ -421,6 +496,37 @@ var unsupportedCausalAssertionPattern = regexp.MustCompile(`(?i)\b(?:caused|caus
 var directInvestmentInstructionPattern = regexp.MustCompile(`(?i)\b(?:(?:you|investors?|users?)\s+should\s+|(?:i|we)\s+recommend\s+)?(?:strong\s+)?(?:buy(?:ing)?|sell(?:ing)?|hold(?:ing)?)\s+(?:the\s+|this\s+|these\s+)?(?:stock|shares?|security|securities)\b`)
 var guaranteedOutcomePattern = regexp.MustCompile(`(?i)\b(?:guaranteed|certain|risk[- ]free|cannot\s+lose|sure\s+to)\b.{0,36}\b(?:return|profit|upside|gain|outperform|increase|rise)\b`)
 
+func neutralizeUnsupportedCausalAttribution(body *finalBody) {
+	for index := range body.Sections {
+		section := &body.Sections[index]
+		var boundary string
+		switch section.SectionType {
+		case "transmission_mechanisms":
+			boundary = "Available evidence supports a conditional transmission mechanism, not observed causality."
+		case "market_measurement":
+			boundary = "Available evidence does not establish a causal attribution for the observed market relationship."
+		default:
+			continue
+		}
+		kept := make([]string, 0)
+		removed := false
+		for _, sentence := range semanticSentenceFragmentPattern.FindAllString(section.Content, -1) {
+			sentence = strings.TrimSpace(sentence)
+			if sentence == "" {
+				continue
+			}
+			if unsupportedCausalAssertionPattern.MatchString(sentence) {
+				removed = true
+				continue
+			}
+			kept = append(kept, sentence)
+		}
+		if removed {
+			section.Content = appendSentence(strings.Join(kept, " "), boundary)
+		}
+	}
+}
+
 func canonicalizeRequestedAssumptions(body *finalBody, material synthesisPromptInput) {
 	// Request assumptions are user- or application-authorized scenario boundaries. Model-authored
 	// additions are not allowed to become a second assumption authority.
@@ -469,7 +575,10 @@ func validateDecisionSemanticAuthority(body finalBody, material synthesisPromptI
 		}
 	}
 	if section, required := sections["scenarios"]; required {
-		if !hasRole(section, roles.Valuation) {
+		if material.Request.PrimaryIntent == "economic_transmission" && !hasRole(section, roles.EconomicsTransmission) {
+			return errors.New("economic-transmission scenarios require approved economics-transmission authority")
+		}
+		if material.Request.PrimaryIntent != "economic_transmission" && !hasRole(section, roles.Valuation) {
 			return errors.New("scenarios requires approved valuation authority")
 		}
 		coveredAssumptions := map[string]bool{}
@@ -514,6 +623,7 @@ func validateResponsibleUse(body finalBody) error {
 const (
 	transmissionBoundaryDisclosure = "These mechanisms are scenario-conditioned pathways, not estimates of observed causality."
 	marketBoundaryDisclosure       = "Price co-movement, correlation, and event-window timing do not by themselves establish causality."
+	noAuthorizedAssumptions        = "No explicit assumptions were supplied or authorized; any assumption-dependent conclusion remains unavailable."
 )
 
 func appendEpistemicBoundaryDisclosures(sections []contracts.AnswerSection) {
@@ -535,26 +645,43 @@ func synchronizeSemanticSections(sections []contracts.AnswerSection, assumptions
 	for index := range sections {
 		switch sections[index].SectionType {
 		case "assumptions":
-			if len(assumptions) == 0 {
-				return errors.New("final assumptions section requires at least one explicit assumption")
-			}
 			sections[index].Title = "Assumptions"
-			sections[index].Content = strings.Join(assumptions, " ")
+			if len(assumptions) == 0 {
+				sections[index].Content = noAuthorizedAssumptions
+			} else {
+				sections[index].Content = strings.Join(assumptions, " ")
+			}
+			clearSynchronizedSectionReferences(&sections[index])
 		case "limitations":
 			if len(limitations) == 0 {
 				return errors.New("final limitations section requires at least one explicit limitation")
 			}
 			sections[index].Title = "Limitations"
 			sections[index].Content = strings.Join(limitations, " ")
+			clearSynchronizedSectionReferences(&sections[index])
 		}
 	}
 	return nil
+}
+
+// Assumptions and limitations are replaced with application-authorized text above. References
+// selected for the discarded model draft cannot remain attached to that canonical content.
+func clearSynchronizedSectionReferences(section *contracts.AnswerSection) {
+	section.ClaimRefs = nil
+	section.EvidenceRefs = nil
+	section.ReceiptRefs = nil
+	section.NumericalRefs = nil
 }
 
 var modelOwnedDirectionPattern = regexp.MustCompile(`(?i)\b(?:higher|lower|greater|less|more|smaller|larger)\s+than\b|\b(?:above|below|exceeds?|outpaces?|underperforms?|overperforms?)\b`)
 var numericalConceptPattern = regexp.MustCompile(`(?i)\b(?:dcf|discounted\s+cash\s+flow|enterprise\s+value|valuation|multiple|margin|growth|revenue|cash\s+flow|capex|return|volatility|beta|correlation|price|earnings|debt|equity)\b`)
 var unavailableAuthorityPattern = regexp.MustCompile(`(?i)\b(?:not\s+(?:available|provided|supplied|present)|unavailable|missing|absent|withheld|remain(?:s)?\s+open)\b`)
 var malformedMixedCasePattern = regexp.MustCompile(`[a-z][A-Z]{2,}\b`)
+var semanticSentenceFragmentPattern = regexp.MustCompile(`(?s)[^.!?\n]+(?:[.!?]+|$)`)
+var internalOperationTokenPattern = regexp.MustCompile(
+	`(?i)\b(?:financial|valuation|scenario|accounting)\s*\.\s*` +
+		`[a-z][a-z0-9]*_[a-z0-9_]+(?:\s*\.\s*[a-z][a-z0-9]*_[a-z0-9_]+)?\b`,
+)
 
 // Models may explain why a deterministic relation matters, but they cannot author the relation's
 // company ordering. Go appends the validated direction after synthesis.
@@ -616,14 +743,130 @@ func validateReceiptAvailabilityClaims(body finalBody, material synthesisPromptI
 	return nil
 }
 
+// A successful calculation receipt is stronger authority than model-authored availability prose.
+// Go removes only the contradictory sentence and records a neutral, receipt-backed boundary; it
+// never invents a value or rewrites the model's qualitative interpretation.
+func repairReceiptAvailabilityClaims(body *finalBody, material synthesisPromptInput) {
+	operations := map[string]bool{}
+	for _, operation := range material.ValidatedOperations {
+		operations[operation] = true
+	}
+	for _, receipt := range material.Receipts {
+		operations[receipt.OperationID] = true
+	}
+	terms := map[string][]string{
+		"valuation.fcff_dcf":          {"dcf", "discounted cash flow", "valuation range", "valuation ranges"},
+		"scenario.sensitivity_matrix": {"sensitivity", "sensitivity matrix"},
+		"valuation.peer_multiple":     {"multiple", "multiples"},
+	}
+	displayNames := make(map[string]string, len(terms)+len(operations))
+	for operation := range terms {
+		displayNames[operation] = operationDisplayName(operation)
+	}
+	for operation := range operations {
+		displayNames[operation] = operationDisplayName(operation)
+	}
+	renderOperationIDs := func(value string) string {
+		for operation, label := range displayNames {
+			parts := strings.Split(operation, ".")
+			escaped := make([]string, 0, len(parts))
+			for _, part := range parts {
+				escaped = append(escaped, regexp.QuoteMeta(part))
+			}
+			leaf := escaped[len(escaped)-1]
+			pattern := regexp.MustCompile(`(?i)\b` + strings.Join(escaped, `\.\s*`) +
+				`(?:\.\s*` + leaf + `)?\b`)
+			value = pattern.ReplaceAllString(value, label)
+		}
+		return internalOperationTokenPattern.ReplaceAllStringFunc(value, func(identifier string) string {
+			return operationDisplayName(strings.Join(strings.Fields(identifier), ""))
+		})
+	}
+	sanitize := func(value string) (string, []string) {
+		value = renderOperationIDs(value)
+		kept := make([]string, 0)
+		removed := make([]string, 0)
+		for _, sentence := range semanticSentenceFragmentPattern.FindAllString(value, -1) {
+			lower := strings.ToLower(sentence)
+			matched := false
+			if unavailableAuthorityPattern.MatchString(sentence) {
+				for operation, aliases := range terms {
+					if !operations[operation] {
+						continue
+					}
+					for _, alias := range aliases {
+						if strings.Contains(lower, alias) {
+							removed = appendUnique(removed, operation)
+							matched = true
+							break
+						}
+					}
+				}
+			}
+			if !matched && strings.TrimSpace(sentence) != "" {
+				kept = append(kept, strings.TrimSpace(sentence))
+			}
+		}
+		return strings.TrimSpace(strings.Join(kept, " ")), removed
+	}
+	for index := range body.Sections {
+		body.Sections[index].Title = renderOperationIDs(body.Sections[index].Title)
+		content, removed := sanitize(body.Sections[index].Content)
+		if len(removed) > 0 {
+			sort.Strings(removed)
+			content = strings.TrimSpace(content + " Deterministic outputs for " +
+				strings.Join(removed, ", ") +
+				" are available under validated calculation receipts; interpretation remains conditional on the supplied assumptions.")
+		}
+		body.Sections[index].Content = content
+	}
+	for index := range body.Assumptions {
+		body.Assumptions[index] = renderOperationIDs(body.Assumptions[index])
+	}
+	limitations := make([]string, 0, len(body.Limitations))
+	for _, limitation := range body.Limitations {
+		content, removed := sanitize(limitation)
+		if content != "" {
+			limitations = append(limitations, content)
+		}
+		if len(removed) > 0 && content == "" {
+			limitations = append(limitations,
+				"Deterministic outputs remain conditional on the supplied assumptions and source scope.")
+		}
+	}
+	body.Limitations = limitations
+	for index := range body.NextActions {
+		body.NextActions[index] = renderOperationIDs(body.NextActions[index])
+	}
+}
+
+func operationDisplayName(operation string) string {
+	name := operation
+	if index := strings.LastIndex(name, "."); index >= 0 {
+		name = name[index+1:]
+	}
+	name = strings.ReplaceAll(name, "_", " ")
+	if strings.EqualFold(name, "fcff dcf") {
+		return "FCFF DCF"
+	}
+	return name
+}
+
 func validatePresentationQuality(body finalBody) error {
-	texts := make([]string, 0, len(body.Sections)+len(body.Limitations)+len(body.NextActions))
+	texts := make([]string, 0, len(body.Sections)+len(body.Assumptions)+len(body.Limitations)+len(body.NextActions))
 	for _, section := range body.Sections {
 		texts = append(texts, section.Title, section.Content)
 	}
+	texts = append(texts, body.Assumptions...)
 	texts = append(texts, body.Limitations...)
 	texts = append(texts, body.NextActions...)
 	for _, text := range texts {
+		if token := rawInternalReferenceTokenPattern.FindString(text); token != "" {
+			return fmt.Errorf("semantic draft contains internal authority identifier %q", token)
+		}
+		if token := internalOperationTokenPattern.FindString(text); token != "" {
+			return fmt.Errorf("semantic draft contains internal operation identifier %q", token)
+		}
 		if token := malformedMixedCasePattern.FindString(text); token != "" {
 			return fmt.Errorf("semantic draft contains malformed mixed-case token %q", token)
 		}
@@ -670,15 +913,12 @@ func assembleFinalSections(
 	requested []string,
 	packets []contracts.ContextPacket,
 ) ([]contracts.AnswerSection, error) {
+	if err := validateRequestedSectionSet(drafts, requested); err != nil {
+		return nil, err
+	}
 	byType := make(map[string]answerSectionDraft, len(drafts))
 	for _, draft := range drafts {
-		if _, exists := byType[draft.SectionType]; exists {
-			return nil, fmt.Errorf("final answer duplicated section %q", draft.SectionType)
-		}
 		byType[draft.SectionType] = draft
-	}
-	if len(byType) != len(requested) {
-		return nil, fmt.Errorf("final answer produced %d unique sections for %d requested outputs", len(byType), len(requested))
 	}
 
 	claimAuthority := make(map[string]contracts.Finding)
@@ -728,6 +968,141 @@ func assembleFinalSections(
 		sections = append(sections, section)
 	}
 	return sections, nil
+}
+
+func validateRequestedSectionSet(drafts []answerSectionDraft, requested []string) error {
+	expected := make(map[string]bool, len(requested))
+	for _, sectionType := range requested {
+		if expected[sectionType] {
+			return fmt.Errorf("request duplicated section type %q", sectionType)
+		}
+		expected[sectionType] = true
+	}
+	seen := make(map[string]bool, len(drafts))
+	for _, draft := range drafts {
+		if !expected[draft.SectionType] {
+			return fmt.Errorf("final answer produced unrequested section %q", draft.SectionType)
+		}
+		if seen[draft.SectionType] {
+			return fmt.Errorf("final answer duplicated section %q", draft.SectionType)
+		}
+		seen[draft.SectionType] = true
+	}
+	for _, sectionType := range requested {
+		if !seen[sectionType] {
+			return fmt.Errorf("final answer omitted requested section %q", sectionType)
+		}
+	}
+	return nil
+}
+
+func repairApplicationOwnedSectionSet(
+	body *finalBody,
+	requested []string,
+	claims []synthesisClaimView,
+) error {
+	expected := make(map[string]bool, len(requested))
+	for _, sectionType := range requested {
+		expected[sectionType] = true
+	}
+	firstByType := make(map[string]answerSectionDraft, len(body.Sections))
+	for _, section := range body.Sections {
+		if !expected[section.SectionType] {
+			return fmt.Errorf("cannot repair unrequested section %q", section.SectionType)
+		}
+		if _, exists := firstByType[section.SectionType]; !exists {
+			firstByType[section.SectionType] = section
+		}
+	}
+	missing := make([]string, 0)
+	for _, sectionType := range requested {
+		if _, exists := firstByType[sectionType]; !exists {
+			missing = append(missing, sectionType)
+		}
+	}
+	if len(missing) == 0 {
+		return errors.New("deterministic section repair requires a missing application-owned section")
+	}
+	for _, sectionType := range missing {
+		switch sectionType {
+		case "assumptions":
+			firstByType[sectionType] = answerSectionDraft{
+				SectionType: sectionType,
+				Title:       "Assumptions",
+				Content:     noAuthorizedAssumptions,
+			}
+		case "limitations":
+			firstByType[sectionType] = answerSectionDraft{
+				SectionType: sectionType,
+				Title:       "Limitations",
+				Content:     "Application-authorized limitations are listed below.",
+			}
+		case "evidence":
+			refs := supportedSynthesisClaimIDs(claims, 8)
+			if len(refs) == 0 {
+				return errors.New("cannot reconstruct evidence section without supported authority")
+			}
+			firstByType[sectionType] = answerSectionDraft{
+				SectionType: sectionType,
+				Title:       "Evidence",
+				Content:     "Approved evidence and deterministic authority define the factual boundary of this answer.",
+				ClaimRefs:   refs,
+			}
+		default:
+			return fmt.Errorf("cannot deterministically reconstruct analytical section %q", sectionType)
+		}
+	}
+	body.Sections = body.Sections[:0]
+	for _, sectionType := range requested {
+		body.Sections = append(body.Sections, firstByType[sectionType])
+	}
+	return validateRequestedSectionSet(body.Sections, requested)
+}
+
+func supportedSynthesisClaimIDs(claims []synthesisClaimView, limit int) []string {
+	result := make([]string, 0, limit)
+	for _, claim := range claims {
+		finding := claim.Finding
+		if len(finding.EvidenceRefs)+len(finding.CalculationRefs)+len(finding.NumericalRefs) == 0 {
+			continue
+		}
+		result = append(result, finding.ClaimID)
+		if len(result) == limit {
+			break
+		}
+	}
+	return result
+}
+
+// Evidence, assumptions, and limitations are application-owned presentation sections. Preserve
+// model-selected evidence claims only when they carry real authority, and bind a supported fallback
+// when the model selected hypotheses alone. Analytical sections remain entirely model-owned.
+func normalizeApplicationOwnedSectionAuthority(
+	sections []answerSectionDraft,
+	claims []synthesisClaimView,
+) {
+	supported := supportedSynthesisClaimIDs(claims, 8)
+	supportedSet := make(map[string]bool, len(supported))
+	for _, claimID := range supported {
+		supportedSet[claimID] = true
+	}
+	for index := range sections {
+		switch sections[index].SectionType {
+		case "evidence":
+			filtered := make([]string, 0, len(sections[index].ClaimRefs))
+			for _, claimID := range sections[index].ClaimRefs {
+				if supportedSet[claimID] {
+					filtered = append(filtered, claimID)
+				}
+			}
+			if len(filtered) == 0 {
+				filtered = append(filtered, supported...)
+			}
+			sections[index].ClaimRefs = dedupeStrings(filtered)
+		case "assumptions", "limitations":
+			sections[index].ClaimRefs = nil
+		}
+	}
 }
 
 func dedupeStrings(values []string) []string {

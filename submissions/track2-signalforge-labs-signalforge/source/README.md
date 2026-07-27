@@ -16,6 +16,40 @@ Build a private research desk where specialist agents can:
 - preserve local memory;
 - produce clear, evidence-grounded analysis.
 
+## Technology 20 vNext Evaluation Lane
+
+The current `main` branch contains a guarded expansion from the immutable Microsoft/NVIDIA
+baseline to twenty US-listed technology issuers. All twenty companies are discoverable in the
+workspace and have explicit machine-readable activation states. This does **not** mean that every
+company, metric, or pair is research-ready.
+
+The vNext lane currently provides:
+
+- a governed issuer and share-class catalog for twenty companies;
+- SEC-first point-in-time data authority and deterministic financial-activation reports;
+- 80 baseline standalone development journeys plus a separate 60-case public augmentation for
+  economics, valuation-readiness, and thesis monitoring; sealed evaluation remains isolated;
+- five bounded peer lanes with metric-level `comparable`,
+  `comparable_with_caveat`, `not_comparable`, or `unavailable` dispositions;
+- a value-free peer-boundary matrix exposing definitions, fiscal periods, taxonomy, units,
+  dimensions, accounting perimeters, segment scope, security identity, caveats, and explicit
+  non-activation of market dates and security classes;
+- a peer policy that prevents individually valid company metrics from becoming an unauthorized
+  cross-company direction;
+- local Radeon semantic evaluation with both independent critics and one final synthesis; and
+- a workspace that exposes company authority, evidence recency, governed periods, explicit
+  unavailable price dates, scenario assumptions, deterministic receipts, abstentions,
+  metric-level peer dispositions, and adjacent comparison caveats without enabling a guarded
+  company or pair;
+- fail-closed workspace states that preserve the last accepted case when the local model,
+  optional API, retrieval, or a deterministic tool is unavailable.
+
+All five peer lanes remain evaluation-only until semantic execution, sealed testing, named
+professional review, and exact-release rights review are complete. Private prompts, responses,
+source bodies, model weights, sealed labels, and raw evaluation reports are intentionally absent
+from this repository. The public fixtures and tests prove contracts and deterministic authority;
+they do not claim universal factual accuracy or promote the vNext release.
+
 ## Golden Vertical
 
 The first complete journey compares Microsoft (`CIK 0000789019`) and NVIDIA
@@ -38,8 +72,20 @@ go run ./cmd/signalforge-workspace --mode fixture --static-dir web/dist
 ```
 
 Open `http://127.0.0.1:8080`. Run `scripts/verify.sh` to execute the complete repository, evidence,
-frontend, and clean-output contract suite. Live Radeon inference is documented under
+frontend, and clean-output contract suite after installing its small Python dependency with
+`python3 -m pip install -r requirements-verify.txt`. Live Radeon inference is documented under
 [Reproduce The Selected Radeon Runtime](#reproduce-the-selected-radeon-runtime).
+
+For a clean container reproduction, including the optional Radeon Mission Control stack:
+
+```bash
+make fixture-up          # Workspace only
+make mission-control-up  # Workspace plus Grafana, Prometheus, Loki, Tempo, and Alloy
+```
+
+Both ports bind to loopback. Fixture inference requires no GPU, model, credential, or remote API.
+See [Radeon Mission Control](docs/radeon-mission-control.md) for the four dashboards, the protected
+Inference Inspector, privacy boundaries, and exact validation commands.
 
 ## Project Documentation
 
@@ -49,6 +95,7 @@ frontend, and clean-output contract suite. Live Radeon inference is documented u
 - [4 minute 12.9 second Radeon demo](output/video/SignalForge-Radeon-Demo.mp4)
 - [Final demo cut sheet](docs/demo-script.md)
 - [Evidence and reproduction guide](evidence/README.md)
+- [Radeon Mission Control and container guide](docs/radeon-mission-control.md)
 - [Public Sprint 13 judge-artifact release](https://github.com/rvbernucci/signalforge/releases/tag/sprint13-demo-v1)
 <!-- evidence-claim:judge-evidence-drafts -->
 
@@ -56,7 +103,11 @@ frontend, and clean-output contract suite. Live Radeon inference is documented u
 
 ## Status
 
-Foundation under active development. The repository currently includes:
+Foundation under active development. Tag `v1.0.0` remains the immutable, independently
+reproducible hackathon baseline. The current `main` line integrates the post-v1 financial
+intelligence, investor-relations evidence, validation, lineage, and optional hybrid specialist
+work in one reviewable history. New capabilities are not represented as Radeon performance or
+model-quality claims until their dedicated evidence gates pass.
 
 - versioned Go contracts for specialist context, deterministic engine requests and receipts, and evaluation evidence;
 - fail-closed validation for unsupported facts, unproven numerical inputs, and failed invariants;
@@ -66,8 +117,12 @@ Foundation under active development. The repository currently includes:
 - immutable, content-addressed raw storage with separate retrieval observations;
 - fail-closed SEC parsing, historical-submission joins, amendment-aware point-in-time normalization,
   JSONL derivation, and DuckDB/Parquet export;
-- a 28-operation Tier 0 capability registry with role-based, fail-closed permissions;
+- a frozen 28-operation Tier 0 baseline with role-based, fail-closed permissions and one
+  golden specification case per baseline operation;
   <!-- evidence-claim:tier0-golden-coverage -->
+- a separate 52-operation financial-intelligence registry, composed with Tier 0 at runtime without
+  changing its frozen identity, plus 80 canonical metric definitions, typed period/sign
+  normalization, independent numerical references, and numerically silent model packets;
 - an immutable registry for 11 logical roles with artifact, tool, retry, timeout, and memory authority;
 - a versioned eight-intent taxonomy with 24 frozen routing cases;
 - typed research, planning, evidence, critique, final-answer, memory, and failure contracts;
@@ -85,13 +140,24 @@ Foundation under active development. The repository currently includes:
   invented references, contradictory review, and partial-specialist degradation;
 - governed follow-up envelopes that preserve parent identity, point-in-time scope, entities,
   comparison mode, and evidence/receipt lineage while requiring fresh authorization in every run;
-- a responsive React/TypeScript research workspace with safe SSE progress, scenario controls,
-  case-aware follow-ups, distinct evidence and calculation surfaces, explicit degraded states,
-  and a privacy-safe Go projection that excludes prompts, responses, and private reasoning;
+- a responsive React/TypeScript research workspace with a hash-bound, expandable execution plan,
+  eight stable parent phases, resumable privacy-safe SSE progress, scenario controls, case-aware
+  follow-ups, distinct evidence and calculation surfaces, explicit degraded states, and a Go
+  projection that excludes prompts, responses, credentials, and private reasoning;
+- a correlated Intelligence Inspector for model identity, prompt hashes, token use, RAG lineage,
+  deterministic engine receipts, review, and release, with a disabled-by-default, token-protected,
+  expiring local vault for sanitized model input/output;
+- privacy-safe OpenTelemetry, bounded Prometheus metrics, structured JSONL events, a resilient
+  `amd-smi`/`rocm-smi` exporter, and four provisioned Grafana Mission Control dashboards;
+- reproducible `linux/amd64` fixture, ROCm llama.cpp, local-only, championship, and observability
+  container surfaces with file-mounted secrets and no startup model download;
 - a deterministic Context Compiler that preserves conflicts and enforces an explicit token budget;
   <!-- evidence-claim:context-compiler -->
 - a bounded Microsoft/NVIDIA investor-relations source map with authority, temporal, rights, and
   supersession gates, plus a seven-document hash-addressed golden manifest;
+- a governed 20-company US technology investor-relations registry, official-source discovery and
+  collection tooling, immutable lineage, rights quarantine, narrative projection, chunking,
+  retrieval evaluation, and a citation-resolving Go query boundary;
 - a 17-question retrieval evaluation over 25 regulatory and investor-relations chunks; BM25 with
   financial-concept expansion returned the complete labeled evidence set for every frozen question;
   <!-- evidence-claim:retrieval-foundation -->
@@ -102,6 +168,12 @@ Foundation under active development. The repository currently includes:
 - one golden case for each of 28 Tier 0 operations and five independent Python reference checks;
 - a role-authorized executor for all 28 Tier 0 operations, immutable calculation receipts,
   replay verification, and append-only supersession records;
+- deterministic financial-intelligence engines for cash generation, returns, quality, capital
+  allocation, valuation, peer analysis, and non-causal association, with fail-closed domain,
+  period, denominator, and applicability controls;
+- an optional hybrid runtime that keeps planning, numerical authority, review, rendering, and
+  fallback under SignalForge control while sending only the bounded context-specialist wave to a
+  runtime-configured Radeon Cloud vLLM endpoint;
 - automated tests covering architecture, authority, evidence, and numerical validation.
 
 The production SEC path retrieves root and historical Submissions, bounded primary filing
@@ -246,13 +318,117 @@ terminal log. It separates the readable investment analysis from source evidence
 calculation receipts, assumptions, limitations, and system caveats. Streamed events expose bounded
 orchestration status without exposing prompts, response bodies, token details, or chain-of-thought.
 
+Every accepted research plan is projected into an independently expandable live checklist inside
+the conversation. The card shows the bounded objective, role authority, dependency graph, execution
+wave, route reason, attempts, duration, release checks, and safe artifact IDs for every step. Active
+steps expand automatically; completed steps remain available for inspection. Proof and lineage
+actions reuse the existing evidence, calculation, and Intelligence Inspector surfaces rather than
+creating a second execution authority.
+
+The dashboard is observational only. A three-journey ablation compares execution with the event
+projection disabled and enabled, proving identical model-adapter call counts, canonical request
+and response payloads, final answer bytes, and orchestration-event counts. Identical payload bytes
+also imply identical token counts for any deterministic tokenizer under the same adapter
+configuration.
+
+Accepted-workload CPU evidence separates deterministic projection cost from nondeterministic model
+generation. Five `linux/amd64` repetitions on an AMD EPYC 9334 measured 30.758 ms of median
+incremental projection work. A separately hash-bound accepted local Radeon journey consumed
+270.013214 seconds of complete-journey CPU over ten model calls, producing a conservative
+**0.011391362%** upper bound against the strict one-percent gate. The raw model A/B pairing was
+deliberately excluded from the decision because changing repair behavior and generated-token counts
+would confound model variance with dashboard cost. Reproduce the bounded calculation with
+`python3 scripts/build_dashboard_cpu_evidence.py --benchmark
+evidence/dashboard-cpu-benchmark-radeon.txt --workload
+evidence/dashboard-workload-cpu-radeon.json --output evidence/dashboard-cpu-evidence.json --check`.
+
+For live runs, the Workspace plan and Radeon Mission Control share one canonical `run_id` and
+deterministic `trace_id`. The browser verifies both identifiers before displaying lineage and
+fails closed on a stale or cross-run observability record without affecting the answer path.
+
+Two accepted working-tree journeys on the Radeon host now prove this correlation end to end. The
+local-only journey completed 11 model calls through local ROCm in 182.189 seconds. The hybrid
+journey completed 17 observed calls in 230.222 seconds across the provided Radeon API and the
+authorized local ROCm fallback, while both surfaces displayed the same run and trace identities.
+Four 1280×720 captures and two sanitized journey manifests are hash-bound in
+[`dashboard-radeon-synchronized-captures.json`](evidence/dashboard-radeon-synchronized-captures.json).
+The artifact explicitly records `exact_release_artifact: false`: it closes the synchronized
+working-tree Radeon proof, not the later exact-image promotion gate.
+
+![Accepted local Radeon journey with the expandable execution plan](docs/assets/sprint34-radeon-local-plan-expanded-1280x720.jpg)
+
+_Accepted local-only working-tree journey. Every phase remains independently expandable._
+
+![Accepted hybrid Radeon journey correlated in Mission Control](docs/assets/mission-control-radeon-hybrid-sprint34-viewport.jpg)
+
+_Accepted hybrid working-tree journey. Mission Control shows provided Radeon API calls and local
+ROCm execution under one run and trace identity._
+
+The same workspace was verified at a 390×844 responsive breakpoint without horizontal overflow.
+Two additional hybrid retries reached every required phase but failed the final synthesis contract
+and were stopped safely rather than releasing an unverified answer. That negative-path evidence is
+preserved separately from the accepted journey and demonstrates the fail-closed release boundary.
+
+![Responsive SignalForge workspace at 390 by 844](docs/assets/sprint34-radeon-hybrid-workspace-mobile-390x844.jpg)
+
+![Hybrid retry stopped safely at the release boundary](docs/assets/sprint34-radeon-hybrid-safe-stop-1280x720.jpg)
+
+Observed specialist adapters now publish the real authorized-retrieval lifecycle: started, passed,
+degraded, or failed. BM25 providers report matched, selected, and rejected candidate counts; a
+provider without that telemetry says it is unavailable. Only deterministic engines executed during
+the current journey publish tool started, passed, or failed rows. Loading a precomputed receipt or
+authorizing a capability never pretends that a tool ran. Evidence opens in the Evidence Drawer,
+calculation receipts open in the Calculation Drawer, and both remain correlated with Mission
+Control by safe IDs. The live stream never carries source bodies, query text, formula values, model
+payloads, or financial outputs.
+
+Interpretation and planning rows expose only the governed intent, resolved entity IDs, as-of and
+depth boundaries, role topology, waves, concurrency, and named release/abstention conditions.
+Specialist rows expose evidence coverage and bounded finding, counterevidence, conflict, uncertainty,
+and missing-evidence counts. Review rows expose approved/rejected claim-ID and issue counts without
+claim bodies. Final synthesis exposes only supported-claim coverage, mandatory-review count,
+evidence/receipt reference counts, limitations, and section count. These operational summaries let
+the user inspect what passed, degraded, or was withheld without turning the dashboard into a second
+release authority.
+
+![SignalForge expandable execution plan showing bounded review, route, checklist, and lineage state](docs/assets/live-execution-plan-desktop.jpg)
+
+_Completed CPU fixture capture from the current development tree._
+
+![SignalForge expandable execution plan showing a Radeon API failure recovered by the authorized local ROCm fallback](docs/assets/live-execution-plan-recovered-fallback-desktop.jpg)
+
+_Recovered-degradation CPU fixture generated from the versioned
+[`recovered-fallback-events.json`](fixtures/workspace/recovered-fallback-events.json) overlay. The
+expanded Business Strategy step preserves the full `Radeon API to Local ROCm` route and the second
+attempt. Exact release and Radeon captures remain separate promotion gates._
+
+The canonical projection is available at
+`GET /api/v1/runs/{run_id}/execution`. It is versioned, sequence-bound, SHA-256 signed, and embedded
+in retained case projections. SSE reconnects can send `Last-Event-ID`; duplicates are ignored,
+sequence gaps trigger canonical snapshot recovery, and a terminal step cannot be reopened by a
+late event. The pure browser reconciler advances only an observation cursor; it never derives or
+authorizes a backend transition. A failed mandatory step can close the run safely but cannot be
+presented as a successful completion.
+
+Operational replay retains at most 256 safe events per run and 64 completed run records. Active
+runs are preserved, while explicitly saved cases remain independent in the user-controlled SQLite
+store. This keeps long dashboard sessions bounded without converting observability into implicit
+memory.
+
+Model-call rows preserve only the observed route class, bounded attempt number, and call kind:
+`primary`, `retry`, `fallback`, or `bounded_repair`. Classification compares route, failure state,
+output budget, and an in-memory prompt fingerprint; prompt text and fingerprints are never
+published. The execution card therefore distinguishes a real retry or repair from a primary call
+without exposing private reasoning or changing model behavior.
+
 The Go server has two modes:
 
 - `fixture` replays the complete privacy-safe golden case without a GPU or model download;
 - `live` runs the same interface against the loopback-only Gemma endpoint on Radeon/ROCm.
 
-The measured fixture evaluation loaded the initial case in 1.14 ms, surfaced the first safe progress
-event in 7.22 ms, and completed its 21-event replay in 114.36 ms on the dated development run. These
+The measured fixture evaluation loaded the initial case in 1.257 ms, surfaced the first safe
+progress event in 4.438 ms, and completed its 40-event replay in 324.573 ms on the dated
+development run. These
 are reproducible demo-path measurements, not Radeon inference latency. The accepted full Radeon
 journey remains the separately reported 154.33-second v57 run.
 <!-- evidence-claim:research-workspace -->
@@ -264,6 +440,12 @@ the released, privacy-safe workspace projection in a local SQLite database. The 
 the user inspect, export, and delete that snapshot. Every read verifies the projection SHA-256;
 dedicated directories created by SignalForge use `0700`, the database file uses `0600`, and SQLite
 secure deletion is enabled. Existing parent-directory permissions are never changed.
+
+The live plan records the real policy lifecycle as `not_requested`, `requested`, `approved`,
+`saved`, `unavailable`, `failed`, or `deleted`. An ephemeral run is explicitly marked skipped
+rather than being presented as active memory, and deletion updates the live run projection when
+that run is still resident. A successful answer remains valid if optional retention is unavailable
+or fails.
 
 The stored snapshot contains the user's research question and the answer already released through
 the Numerical Silence and evidence gates. It does not contain internal model prompts, raw model
@@ -318,7 +500,7 @@ ssh -L 8080:127.0.0.1:8080 user@radeon-host
 | --- | --- | --- |
 | Go control plane | Go 1.23 or newer | `go.mod` and `go.sum` |
 | Web workspace | Node.js 22 and npm | exact `web/package.json` versions plus `web/package-lock.json`; use `npm ci` |
-| Verification scripts | Python 3.10 or newer, Git, and `jq` | Python standard library unless an optional requirements file is named |
+| Verification scripts | Python 3.10 or newer, Git, and `jq` | `requirements-verify.txt` |
 | SEC analytical export | Python plus DuckDB | `requirements-analytics.txt` |
 | Retrieval experiments | Python, sentence-transformers, and Qdrant client | `requirements-retrieval.txt`; not required for fixture startup |
 | Judge-document rebuild | Python plus ReportLab | `requirements-docs.txt`; generated PDF is already included |
@@ -333,6 +515,13 @@ scripts/verify.sh
 go run ./cmd/signalforge-diag --output environment-report.json
 python3 scripts/audit_public_repo.py --output /tmp/signalforge-release-audit.json
 ```
+
+The optional hybrid specialist path is disabled by default. When enabled, its provider, endpoint,
+model IDs, timeout, and secret location are runtime inputs; no API credential is embedded in the
+repository or binary. See
+[`docs/hybrid-vllm-specialists.md`](docs/hybrid-vllm-specialists.md) for its trust boundary,
+OpenBao-compatible secret mount, local fallback, and evidence requirements. A successful complete
+journey through the organizer-provided endpoint is still required before claiming the vLLM bonus.
 
 The diagnostic records hardware and runtime capabilities when available. Missing optional ROCm
 commands are reported as unavailable rather than causing the diagnostic to fail. It never reads or
@@ -362,6 +551,14 @@ hf download google/gemma-4-26B-A4B-it-qat-q4_0-gguf \
   --local-dir models/gemma4-26b-q4
 
 SIGNALFORGE_VERIFY_MODEL_HASH=1 scripts/serve_llama_rocm.sh
+```
+
+The equivalent license-gated, hash-verifying staging command is:
+
+```bash
+SIGNALFORGE_ACCEPT_GEMMA_LICENSE=yes \
+HF_TOKEN="$HF_TOKEN" \
+scripts/stage_gemma_model.sh models/gemma4-26b-q4
 ```
 
 The server binds to `127.0.0.1:8000` by default and exposes an OpenAI-compatible API. In another
@@ -422,11 +619,19 @@ Model access remains subject to the upstream license and any Hugging Face access
 
 ## Deterministic Financial Engine
 
-The Go engine executes the complete 28-operation Tier 0 registry with decimal authority for
-financial arithmetic and declared `float64` policies for statistical methods. It refuses
-unauthorized roles, unregistered inputs, future evidence, incompatible units, currencies, or
-periods, failed invariants, and non-convergent solves. Receipts are canonical-hash verified;
+The Go engine preserves the frozen 28-operation Tier 0 baseline and composes it with a separate
+52-operation financial-intelligence registry, producing 80 active operations. Decimal arithmetic
+remains authoritative for financial calculations, with declared `float64` policies limited to
+statistical methods. It refuses unauthorized roles, unregistered inputs, future evidence,
+incompatible units, currencies, or periods, failed invariants, and non-convergent solves. Every
+registered operation has a complete required-input unit contract, enforced by a registry-wide
+regression test. Receipts are canonical-hash verified;
 corrections create append-only supersession records instead of mutating prior calculations.
+
+The extended registry covers cash generation, returns, financial quality, capital allocation,
+valuation, peer comparison, and lagged association. Its architecture, numerical boundary, and
+remaining Radeon evidence gates are documented in
+[`docs/financial-intelligence.md`](docs/financial-intelligence.md).
 
 A dated `darwin/arm64` development-machine benchmark measured p95 latency of 42.71 microseconds
 for a five-year FCFF DCF, 1.45 milliseconds for reverse DCF, 87.21 microseconds for beta over

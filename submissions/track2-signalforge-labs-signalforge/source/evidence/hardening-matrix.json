@@ -15,7 +15,7 @@
       "source_hashes": [
         {
           "path": "internal/data/model_test.go",
-          "sha256": "75ea3a5e2aa9d353badea10b9111953915c63d1b34f955029df56b90d20c275f"
+          "sha256": "69d4f830e5aa930ea79a1937b461d7ddff86969b1f2725b45eb12ffe46a8bcc2"
         },
         {
           "path": "internal/normalize/sec_test.go",
@@ -56,7 +56,7 @@
       "source_hashes": [
         {
           "path": "internal/market/model_test.go",
-          "sha256": "73b8b633bf73899502f01b2ab1f91a451b300c89466afe65a3b047a6cfeba842"
+          "sha256": "ca3baef9b0d6a22891f0ccd80b2e1751de4929fec645b423bdec3c9bd020cc5f"
         },
         {
           "path": "internal/adapters/alpaca/client_test.go",
@@ -82,11 +82,11 @@
         },
         {
           "path": "internal/retrieval/retrieval_test.go",
-          "sha256": "03593d7793f4d4d04ef3f474c5958a70ffe7df3fdf71163f3d8967ba5839b79f"
+          "sha256": "5b436e38bd0dbfcdfeaf0c2043ee6a649c024b3fdc4d0b207bb1cac5ed3b9021"
         },
         {
           "path": "internal/retrieval/structured_test.go",
-          "sha256": "31b8ab1d1768476af2df109c217251cc8ca3ac21c3ac302947190b075cb0a9d9"
+          "sha256": "6ad650f8b780271a2957e82653a22ecdb1b4228b466339f28e43d85fa68b95d8"
         }
       ],
       "status": "passed"
@@ -108,11 +108,11 @@
         },
         {
           "path": "internal/localagent/adapter_test.go",
-          "sha256": "b89a15adb4e814a1ff7761f85c3b4901d68a8e0f6322ce134d3a588d13ebe37a"
+          "sha256": "b1d8e63eaf6550c8cd4729f950e6b38a07dc58a12fdd1d5ac37da1e2e557d5b1"
         },
         {
           "path": "internal/localagent/synthesis.go",
-          "sha256": "384f43d2d7ee7f4bb5487162149ee00f40aa05cac22826d52987b91bb4d47c89"
+          "sha256": "e008a1b0484e7de62d5471873de690b4075453245b955da50e8deb1bd0c8cfee"
         }
       ],
       "status": "passed"
@@ -130,7 +130,7 @@
       "source_hashes": [
         {
           "path": "internal/localagent/chaos_test.go",
-          "sha256": "7dd43f45cf2fbb3fa95a4ab68521ece48d66aa7a6f32aa584b0770c62e59ae27"
+          "sha256": "41b56bcf0c1aa4906bc912035376c22a8e3cc087980724b2f423a4391aa27f32"
         }
       ],
       "status": "passed"
@@ -149,7 +149,7 @@
       "source_hashes": [
         {
           "path": "internal/orchestrator/runtime_test.go",
-          "sha256": "e9b186d8f723cc60d254557979f39afb2f9803e8cbc5a9da9cd3fa6d3f367c01"
+          "sha256": "49fab540fd4fe593017286ceefbef73cabd91f3513b9ca8ba4081dd8d958aba4"
         },
         {
           "path": "internal/resilience/breaker_test.go",
@@ -172,7 +172,7 @@
       "source_hashes": [
         {
           "path": "internal/requestparser/parser_test.go",
-          "sha256": "e836593542893067fb6625275deafd50aca1bde6843437396c66137040a6715a"
+          "sha256": "e92213425c0a79076ff4c74486ccc436372b1955796eca2591e54c9d937c6422"
         },
         {
           "path": "internal/casestore/store_test.go",
@@ -195,7 +195,7 @@
       "source_hashes": [
         {
           "path": "internal/orchestrator/runtime_test.go",
-          "sha256": "e9b186d8f723cc60d254557979f39afb2f9803e8cbc5a9da9cd3fa6d3f367c01"
+          "sha256": "49fab540fd4fe593017286ceefbef73cabd91f3513b9ca8ba4081dd8d958aba4"
         },
         {
           "path": "internal/workspace/projection_test.go",
@@ -203,7 +203,7 @@
         },
         {
           "path": "internal/workspace/server_test.go",
-          "sha256": "5d4dedc0af2ad25fad57a3872112eea3f4da1a5c64989c566a95599851748426"
+          "sha256": "ee05c4fbeb008b33748316cae9ee03f44bba2e364de4ebd2dbb41684edfcf8e1"
         }
       ],
       "status": "passed"
@@ -220,7 +220,7 @@
         },
         {
           "path": "cmd/signalforge-workspace/main.go",
-          "sha256": "aa1d0ada439644a62199f05018acbe6ca0b75b000f12c10465dca53b9868cd21"
+          "sha256": "7aed073e436a20eea54ad79a5d93b3c838a085c00a0741ad342c1c6d5f279708"
         }
       ],
       "status": "passed"
@@ -238,7 +238,7 @@
       "source_hashes": [
         {
           "path": "internal/workspace/load_test.go",
-          "sha256": "407390952e0cc9c09cce2c8471e11fc807173fb8a60549d12e98e455fc51e98d"
+          "sha256": "4eb8be8cfb6281705bd525ca98840e02aec9145a4186c8f9cfd93aa37072ef6f"
         }
       ],
       "status": "passed"

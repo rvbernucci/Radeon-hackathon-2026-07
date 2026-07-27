@@ -29,6 +29,21 @@ Validate registered public claims:
 `go run ./cmd/signalforge-release-check --root . \
   --claims evidence/public-claims.json`
 
+After a human has confirmed that an existing claim remains semantically supported by its declared
+evidence, refresh only those already-declared evidence hashes and immediately re-run the gate:
+
+```bash
+go run ./cmd/signalforge-release-check --root . \
+  --claims evidence/public-claims.json --refresh-evidence
+go run ./cmd/signalforge-release-check --root . \
+  --claims evidence/public-claims.json
+```
+
+Refresh never adds evidence paths or changes claim text, status, or public scope. Both refresh and
+validation reject absolute paths, repository traversal, missing files, and symlinks that resolve
+outside the repository. A passing hash gate proves byte identity, not that changed evidence still
+supports the claim; semantic review remains mandatory before refresh.
+
 Validate the public, privacy-safe replay of the current Radeon golden run:
 
 `go run ./cmd/signalforge-validate-replay \
@@ -183,7 +198,8 @@ It verifies that the production frontend is served with the local security polic
 is immediately available, the SSE stream reaches a workspace-level terminal event, and the result
 contains all eight chapters, 12 answer-used evidence cards, and 18 successful calculation receipts.
 
-The observed 1.137 ms initial case, 7.222 ms first progress event, and 114.362 ms complete replay
+The observed 1.257 ms initial case, 4.438 ms first progress event, and 324.573 ms complete
+40-event replay
 measure the fixture demo path only. They are not model or Radeon latency claims. The complete live
 Radeon v57 duration remains reported separately in the golden replay and scorecard.
 
@@ -194,6 +210,71 @@ npm --prefix web ci
 npm --prefix web run build
 go run ./cmd/signalforge-eval-workspace --output /tmp/workspace-evaluation.json
 ```
+
+## Live Execution Plan CPU Overhead
+
+`dashboard-cpu-evidence.json` closes the observational dashboard's accepted-workload CPU gate
+without attributing local-model generation variance to the UI projection. Five deterministic
+`linux/amd64` benchmark repetitions measure the same accepted plan and lifecycle workload with the
+projection disabled and enabled. Their medians are 10.663 ms and 41.421 ms per operation, leaving
+30.758 ms of incremental projection work.
+
+`dashboard-workload-cpu-radeon.json` independently records one accepted local Gemma journey on the
+Radeon host. It completed on the first attempt, used ten model calls, and consumed 270.013214
+seconds of orchestrator-plus-model CPU. Neither artifact retains prompt, response, source, or
+private reasoning bodies. The resulting conservative upper bound is **0.011391362%**, below the
+strict one-percent gate.
+
+The raw AB/BA model experiment is not decision evidence: model repair count and generated-token
+volume varied between conditions. The accepted method keeps model variance out of the incremental
+numerator and binds the benchmark, capture runners, workload binary, and source artifacts by
+SHA-256.
+
+```bash
+python3 scripts/build_dashboard_cpu_evidence.py \
+  --benchmark evidence/dashboard-cpu-benchmark-radeon.txt \
+  --workload evidence/dashboard-workload-cpu-radeon.json \
+  --output evidence/dashboard-cpu-evidence.json \
+  --check
+```
+
+## Synchronized Radeon Dashboard Evidence
+
+`dashboard-radeon-local-journey.json` and `dashboard-radeon-hybrid-journey.json` are sanitized
+aggregates from accepted working-tree journeys on the Radeon host. The local journey records 11
+local ROCm calls. The hybrid journey records 17 calls across `radeon-vllm` and `local-rocm`,
+including the bounded fallback path. Both plans reached 12 of 12 terminal steps across the eight
+governed phases and released an accepted result.
+
+`dashboard-radeon-synchronized-captures.json` binds those manifests to four 1280×720 Workspace and
+Mission Control captures, the tested workspace binary, and the frontend bundle. Its verifier
+rejects incomplete plans, missing phase coverage, mismatched image formats, captures below
+1280×720, a local run using a remote provider, a hybrid run without both Radeon API and local ROCm,
+or any declared retention of prompts, responses, source bodies, or credentials.
+
+This evidence closes the synchronized working-tree Radeon gate only. The manifest deliberately
+sets `exact_release_artifact` and `release_claim_permitted` to `false`; exact source/image binding
+remains a separate release decision.
+
+```bash
+python3 scripts/build_dashboard_radeon_evidence.py \
+  --local evidence/dashboard-radeon-local-journey.json \
+  --hybrid evidence/dashboard-radeon-hybrid-journey.json \
+  --local-plan docs/assets/sprint34-radeon-local-plan-expanded-1280x720.jpg \
+  --local-mission docs/assets/sprint34-radeon-local-mission-control-1280x720.jpg \
+  --hybrid-plan docs/assets/sprint34-radeon-hybrid-plan-expanded-1280x720.jpg \
+  --hybrid-mission docs/assets/mission-control-radeon-hybrid-sprint34-viewport.jpg \
+  --binary-sha256 0302c4580e1c8195547553bcc0b9b700452a11f00126a7d3fc76a5de1136ba4a \
+  --frontend-sha256 7b362551b93737ea208e1c787dab85f856434869a478526520a789da3081a399 \
+  --output evidence/dashboard-radeon-synchronized-captures.json \
+  --check
+```
+
+`sprint34-radeon-runtime.json` adds the hardware and recovery layer for the same candidate. It
+records ROCm 7.2.1 on an AMD Radeon `gfx1100` device, the hash-bound Gemma 4 26B A4B Q4 model,
+267–268 ms workspace startup, complete local and hybrid journey timing, aggregate GPU/VRAM/power
+telemetry, and fail-closed recovery for API loss, local-model loss, and missing financial
+authority. The report retains no prompt, answer, credential, source body, or raw telemetry.
 
 ## Local Memory And Privacy Controls
 

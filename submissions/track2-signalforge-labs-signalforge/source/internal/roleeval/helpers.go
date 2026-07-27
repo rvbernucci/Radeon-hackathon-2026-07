@@ -130,9 +130,18 @@ func reviewPacket(item Case, now time.Time) contracts.ContextPacket {
 
 func synthesisPacket(item Case, now time.Time) contracts.ContextPacket {
 	evidence := contracts.EvidenceRef{EvidenceID: "evidence-1", SourceType: "held_out_fixture", Locator: item.CaseID, ContentSHA: "one", AsOf: now}
+	specialistRole := roles.BusinessStrategy
+	switch item.Scenario {
+	case "financial_quality":
+		specialistRole = roles.FinancialQuality
+	case "economic_transmission":
+		specialistRole = roles.EconomicsTransmission
+	case "market_behavior":
+		specialistRole = roles.MarketBehavior
+	}
 	packet := contracts.ContextPacket{
 		SchemaVersion: contracts.SchemaVersionV1, PacketID: "packet-" + item.CaseID,
-		RunID: "eval-run", StepID: "context-1", SpecialistRole: roles.BusinessStrategy,
+		RunID: "eval-run", StepID: "context-1", SpecialistRole: specialistRole,
 		Objective: "Provide approved evidence.", Scope: contracts.Scope{AsOf: now}, Evidence: []contracts.EvidenceRef{evidence},
 		Findings: []contracts.Finding{{
 			ClaimID: "claim-1", ClaimType: contracts.ClaimFact,
@@ -176,6 +185,20 @@ func packetCalculationSupported(packet contracts.ContextPacket, seeds []Calculat
 	for _, finding := range packet.Findings {
 		for _, receiptID := range finding.CalculationRefs {
 			if wanted[receiptID] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func packetAssumptionsSupported(packet contracts.ContextPacket, expected []string) bool {
+	if len(expected) == 0 || !containsAll(packet.Assumptions, expected) {
+		return false
+	}
+	for _, finding := range append(append([]contracts.Finding(nil), packet.Findings...), packet.Counterevidence...) {
+		for _, assumption := range expected {
+			if slices.Contains(finding.AssumptionRefs, assumption) {
 				return true
 			}
 		}

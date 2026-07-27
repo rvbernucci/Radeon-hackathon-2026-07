@@ -3,6 +3,7 @@ package golden
 import (
 	"context"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -99,6 +100,92 @@ func TestRunConfigRejectsRemoteCoreInference(t *testing.T) {
 	}
 }
 
+func TestRunConfigAcceptsRemoteSpecialistsWhileCoreInferenceRemainsLocal(t *testing.T) {
+	err := validateRunConfig(RunConfig{
+		SnapshotPath: "snapshot", RetrievalPath: "retrieval", TraceDir: "trace",
+		BaseURL: "http://127.0.0.1:8000/v1", Model: "local-model", CodeCommit: "tree",
+		SpecialistProvider: "radeon-vllm",
+		SpecialistBaseURL:  "https://radeon.example/api/v1",
+		SpecialistModel:    "DeepSeek-V4-Flash", SpecialistAPIKey: "secret",
+		Question: DefaultQuestion, RunID: "run", RequestID: "request", Timeout: time.Minute,
+		ContextConcurrency: 4,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFallbackSpecialistReplaysRejectedRemotePacketLocally(t *testing.T) {
+	request := contextRequest(roles.BusinessStrategy)
+	primary := &scriptedSpecialist{err: context.DeadlineExceeded}
+	expected := contracts.ContextPacket{
+		SchemaVersion:  contracts.SchemaVersionV1,
+		PacketID:       "packet-local-fallback",
+		RunID:          request.RunID,
+		StepID:         request.StepID,
+		SpecialistRole: request.SpecialistRole,
+	}
+	fallback := &scriptedSpecialist{packet: expected}
+	specialist := fallbackSpecialist{
+		primary: primary, fallback: fallback, primaryTimeout: time.Second,
+	}
+	packet, err := specialist.Run(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if packet.PacketID != expected.PacketID || primary.calls != 1 || fallback.calls != 1 {
+		t.Fatalf("fallback did not replay the rejected packet locally: packet=%+v primary=%d fallback=%d", packet, primary.calls, fallback.calls)
+	}
+}
+
+func TestFallbackSpecialistPreservesAttemptIndex(t *testing.T) {
+	request := contextRequest(roles.FinancialQuality)
+	expected := contracts.ContextPacket{
+		SchemaVersion: contracts.SchemaVersionV1, PacketID: "packet-local-retry",
+		RunID: request.RunID, StepID: request.StepID, SpecialistRole: request.SpecialistRole,
+	}
+	primary := &attemptScriptedSpecialist{err: context.DeadlineExceeded}
+	fallback := &attemptScriptedSpecialist{packet: expected}
+	specialist := fallbackSpecialist{
+		primary: primary, fallback: fallback, primaryTimeout: time.Second,
+	}
+	packet, err := specialist.RunAttempt(context.Background(), request, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if packet.PacketID != expected.PacketID ||
+		!reflect.DeepEqual(primary.attempts, []int{1}) ||
+		!reflect.DeepEqual(fallback.attempts, []int{1}) {
+		t.Fatalf("fallback lost retry state: packet=%+v primary=%v fallback=%v", packet, primary.attempts, fallback.attempts)
+	}
+}
+
+type scriptedSpecialist struct {
+	packet contracts.ContextPacket
+	err    error
+	calls  int
+}
+
+func (specialist *scriptedSpecialist) Run(_ context.Context, _ contracts.ContextRequest) (contracts.ContextPacket, error) {
+	specialist.calls++
+	return specialist.packet, specialist.err
+}
+
+type attemptScriptedSpecialist struct {
+	packet   contracts.ContextPacket
+	err      error
+	attempts []int
+}
+
+func (specialist *attemptScriptedSpecialist) Run(ctx context.Context, request contracts.ContextRequest) (contracts.ContextPacket, error) {
+	return specialist.RunAttempt(ctx, request, 0)
+}
+
+func (specialist *attemptScriptedSpecialist) RunAttempt(_ context.Context, _ contracts.ContextRequest, attempt int) (contracts.ContextPacket, error) {
+	specialist.attempts = append(specialist.attempts, attempt)
+	return specialist.packet, specialist.err
+}
+
 func TestGoldenRequestRequiresTransmissionAndMarketSections(t *testing.T) {
 	snapshot, err := LoadSnapshot(filepath.Join("..", "..", "fixtures", "golden", "financial-snapshot.json"))
 	if err != nil {
@@ -131,7 +218,7 @@ func TestGoldenRequestUsesExplicitWorkspaceScenarioAssumptions(t *testing.T) {
 	}
 	request, err := goldenRequest(RunConfig{
 		Question: "Compare Microsoft and NVIDIA under easing rates and resilient AI spending.",
-		RunID: "run", RequestID: "request", UseAssumptions: true, Assumptions: want,
+		RunID:    "run", RequestID: "request", UseAssumptions: true, Assumptions: want,
 	}, now)
 	if err != nil {
 		t.Fatal(err)
@@ -227,6 +314,47 @@ func TestSemanticRubricV5DetectsPresentationDefects(t *testing.T) {
 			t.Fatal("malformed mixed-case token unexpectedly passed the frozen rubric")
 		}
 	}
+}
+
+func TestSemanticEvaluationUsesReleasedCritiqueRefsInsteadOfRepairHistory(t *testing.T) {
+	claim := contracts.Finding{ClaimID: "claim-1", ClaimType: contracts.ClaimInference}
+	answer := contracts.FinalAnswer{
+		Sections:     []contracts.AnswerSection{{SectionType: "comparison", Content: "Bounded conclusion.", ClaimRefs: []string{claim.ClaimID}}},
+		CritiqueRefs: []string{"risk-final", "evidence-final"},
+	}
+	report := Report{
+		Question: DefaultQuestion,
+		Request:  contracts.ResearchRequest{RunID: "run-review-authority"},
+		Result: orchestrator.Result{
+			Answer:  &answer,
+			Packets: []contracts.ContextPacket{{SpecialistRole: roles.BusinessStrategy, Findings: []contracts.Finding{claim}}},
+			Critiques: []contracts.CritiqueReport{
+				{ReportID: "risk-repair", ReviewerRole: roles.RiskContrarian, Decision: contracts.CritiqueRepair},
+				{ReportID: "risk-final", ReviewerRole: roles.RiskContrarian, Decision: contracts.CritiqueApprove, ApprovedClaims: []string{claim.ClaimID}},
+				{ReportID: "evidence-repair", ReviewerRole: roles.EvidenceCritic, Decision: contracts.CritiqueRepair},
+				{ReportID: "evidence-final", ReviewerRole: roles.EvidenceCritic, Decision: contracts.CritiqueApprove, ApprovedClaims: []string{claim.ClaimID}},
+			},
+		},
+	}
+	evaluation := EvaluateSemantics(report, SemanticRubric{RubricID: "review-authority"}, "rubric-sha", time.Now())
+	if !semanticCheckPassed(evaluation, "released_claim_authority") {
+		t.Fatalf("intermediate repair history invalidated final review authority: %+v", evaluation.Checks)
+	}
+
+	report.Result.Answer.CritiqueRefs[0] = "risk-repair"
+	evaluation = EvaluateSemantics(report, SemanticRubric{RubricID: "review-authority"}, "rubric-sha", time.Now())
+	if semanticCheckPassed(evaluation, "released_claim_authority") {
+		t.Fatalf("non-approved critique reference was accepted: %+v", evaluation.Checks)
+	}
+}
+
+func semanticCheckPassed(evaluation SemanticEvaluation, checkID string) bool {
+	for _, check := range evaluation.Checks {
+		if check.CheckID == checkID {
+			return check.Passed
+		}
+	}
+	return false
 }
 
 func answerSection(sectionType, content string) contracts.AnswerSection {

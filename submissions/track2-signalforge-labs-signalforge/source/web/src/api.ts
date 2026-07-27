@@ -1,4 +1,17 @@
-import type { CaseSummary, Projection, RunView, ScenarioControl, StoredCase, WorkspaceConfig } from "./types";
+import type {
+  CaseSummary,
+  ExecutionPlan,
+  IntelligenceRecord,
+  FinancialSummary,
+  PeerEvaluationSuite,
+  ProductCatalog,
+  Projection,
+  ProtectedIntelligenceRecord,
+  RunView,
+  ScenarioControl,
+  StoredCase,
+  WorkspaceConfig
+} from "./types";
 
 type Problem = { error?: { code?: string } };
 
@@ -12,6 +25,18 @@ async function readJSON<T>(response: Response): Promise<T> {
 
 export async function getConfig(): Promise<WorkspaceConfig> {
   return readJSON(await fetch("/api/v1/config"));
+}
+
+export async function getCatalog(): Promise<ProductCatalog> {
+  return readJSON(await fetch("/api/v1/catalog"));
+}
+
+export async function getFinancials(): Promise<FinancialSummary> {
+  return readJSON(await fetch("/api/v1/financials"));
+}
+
+export async function getPeerEvaluations(): Promise<PeerEvaluationSuite> {
+  return readJSON(await fetch("/api/v1/peer-evaluations"));
 }
 
 export async function getGoldenCase(): Promise<Projection> {
@@ -28,6 +53,10 @@ export async function createRun(question: string, scenario: ScenarioControl, ret
 
 export async function getRun(runID: string): Promise<RunView> {
   return readJSON(await fetch(`/api/v1/runs/${encodeURIComponent(runID)}`));
+}
+
+export async function getExecutionPlan(runID: string): Promise<ExecutionPlan> {
+  return readJSON(await fetch(`/api/v1/runs/${encodeURIComponent(runID)}/execution`));
 }
 
 export async function createFollowUp(runID: string, question: string, retain: boolean): Promise<RunView> {
@@ -60,4 +89,21 @@ export function subscribeToRun(runID: string, onEvent: (event: MessageEvent<stri
   source.addEventListener("progress", onEvent as EventListener);
   source.onerror = onError;
   return source;
+}
+
+export async function getIntelligence(runID: string): Promise<IntelligenceRecord> {
+  return readJSON(await fetch(`/api/v1/runs/${encodeURIComponent(runID)}/intelligence`));
+}
+
+export async function getProtectedIntelligence(runID: string, token: string): Promise<ProtectedIntelligenceRecord> {
+  return readJSON(await fetch(`/api/v1/runs/${encodeURIComponent(runID)}/intelligence/protected`, {
+    headers: { "X-SignalForge-Audit-Token": token }
+  }));
+}
+
+export async function purgeProtectedIntelligence(runID: string, token: string): Promise<void> {
+  await readJSON(await fetch(`/api/v1/runs/${encodeURIComponent(runID)}/intelligence/protected`, {
+    method: "DELETE",
+    headers: { "X-SignalForge-Audit-Token": token }
+  }));
 }
