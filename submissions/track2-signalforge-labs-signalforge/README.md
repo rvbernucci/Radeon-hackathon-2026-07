@@ -7,9 +7,9 @@
 | Application | SignalForge |
 | Team member | Rafael Bernucci - product architecture, financial domain design, evaluation strategy, and release ownership |
 | Canonical repository | [github.com/rvbernucci/signalforge](https://github.com/rvbernucci/signalforge) |
-| Judge documentation source | [`0385d4cd6b45c9ee47fb377d9587acb2d79d5157`](https://github.com/rvbernucci/signalforge/commit/0385d4cd6b45c9ee47fb377d9587acb2d79d5157) |
+| Judge documentation source | [`756432d8fda288564c25988e826c47fdff781a48`](https://github.com/rvbernucci/signalforge/commit/756432d8fda288564c25988e826c47fdff781a48) |
 | Application image source | [`ac8685307a420e23f73632f0e59fc647e6fdd870`](https://github.com/rvbernucci/signalforge/commit/ac8685307a420e23f73632f0e59fc647e6fdd870) |
-| Championship release | [`v1.2.0`](https://github.com/rvbernucci/signalforge/releases/tag/v1.2.0) |
+| Championship release | [`v1.2.1`](https://github.com/rvbernucci/signalforge/releases/tag/v1.2.1) |
 | Immutable application image | `ghcr.io/rvbernucci/signalforge@sha256:4b68c713e824d3cea9ad6a83cef4c93304961f9f3c3782a984af312bec47bf43` |
 | Platform manifest | `linux/amd64` - `sha256:622013807d01c47e05f1f0a1032a534a237d5c77483b746f3c64ea9c29ce4524` |
 
@@ -18,9 +18,9 @@ remains the exact executable release.
 
 ## Required Materials
 
-- [4 min 26 s AMD Radeon demo](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Radeon-Demo.mp4)
-- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Project-Specification.pdf)
-- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Judge-Deck.pptx)
+- [4 min 26 s AMD Radeon demo](https://github.com/rvbernucci/signalforge/releases/download/v1.2.1/SignalForge-Radeon-Demo.mp4)
+- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/v1.2.1/SignalForge-Project-Specification.pdf)
+- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/v1.2.1/SignalForge-Judge-Deck.pptx)
 - [Judge guide](https://github.com/rvbernucci/signalforge/blob/main/JUDGES.md)
 - [Architecture](https://github.com/rvbernucci/signalforge/blob/main/docs/architecture.svg)
 - [Track 2 compliance matrix](https://github.com/rvbernucci/signalforge/blob/main/docs/track2-compliance.md)
@@ -67,7 +67,12 @@ multi-step planning, local multi-turn memory, and permission/privacy controls.
 - AMD Radeon Cloud `gfx1100`, 47.98 GiB VRAM, ROCm 7.2.1.
 - Gemma 4 26B A4B Instruct QAT Q4_0 through AMD-validated ROCm `llama.cpp`.
 - 32,768-token context and four continuous-batching specialist slots.
-- 40/40 deterministic model-profile contract checks at 86.4601 median decode tokens/s.
+- Gemma passed 40/40 deterministic model-profile contract checks at 86.4601 median decode
+  tokens/s.
+- Qwen3 8B BF16 passed 40/40 at 26.3855 median decode tokens/s; Granite 4.1 8B BF16 passed
+  35/40 at 24.9882.
+- Gemma measured 3.28x Qwen's median decode throughput in this bounded workload. The profiles
+  differ in model, runtime, and precision, so this is not a universal model ranking.
 - The selected four-slot profile was 29.17% faster end-to-end than the passing three-worker
   control.
 - A 5 hour 28 minute soak completed 180/180 journey contracts with no measured allocated-VRAM
@@ -84,7 +89,7 @@ The application image passed a clean public pull, SBOM and provenance checks, ze
 HIGH/CRITICAL vulnerability gates, exact-image fixture execution, and bounded readback on the
 Radeon host. The current repository passed frontend, Go race/vet/tests, Python, financial-reference,
 observability, privacy, hardening, and public-integrity gates in
-[GitHub Actions run 30729164323](https://github.com/rvbernucci/signalforge/actions/runs/30729164323).
+[GitHub Actions run 30752888662](https://github.com/rvbernucci/signalforge/actions/runs/30752888662).
 
 Pull the exact executable:
 
