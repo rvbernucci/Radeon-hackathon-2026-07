@@ -1,121 +1,111 @@
 # SignalForge - AMD AI DevMaster Hackathon Track 2 Submission
 
-| Field | Value |
+| Field | Current release |
 |---|---|
 | Track | Track 2 - Development and Local Deployment of Private AI Agents |
 | Team | SignalForge Labs |
 | Application | SignalForge |
 | Team member | Rafael Bernucci - product architecture, financial domain design, evaluation strategy, and release ownership |
-| Championship source | [`bc9c64746589e79766b2b18226ebb9d1d87d2585`](https://github.com/rvbernucci/signalforge/commit/bc9c64746589e79766b2b18226ebb9d1d87d2585) |
-| Championship release | [`v1.1.1`](https://github.com/rvbernucci/signalforge/releases/tag/v1.1.1) |
-| Public image | `ghcr.io/rvbernucci/signalforge:v1.1.1` |
-| Image digest | `sha256:cbac58cf3e62df0404e9ef1cfc7db6aec49e491e4beb5e1f214d6d562fad814b` |
 | Canonical repository | [github.com/rvbernucci/signalforge](https://github.com/rvbernucci/signalforge) |
-| Judge guide | [SignalForge Judge Guide](https://github.com/rvbernucci/signalforge/blob/main/JUDGES.md) |
+| Judge documentation source | [`0385d4cd6b45c9ee47fb377d9587acb2d79d5157`](https://github.com/rvbernucci/signalforge/commit/0385d4cd6b45c9ee47fb377d9587acb2d79d5157) |
+| Application image source | [`ac8685307a420e23f73632f0e59fc647e6fdd870`](https://github.com/rvbernucci/signalforge/commit/ac8685307a420e23f73632f0e59fc647e6fdd870) |
+| Championship release | [`v1.2.0`](https://github.com/rvbernucci/signalforge/releases/tag/v1.2.0) |
+| Immutable application image | `ghcr.io/rvbernucci/signalforge@sha256:4b68c713e824d3cea9ad6a83cef4c93304961f9f3c3782a984af312bec47bf43` |
+| Platform manifest | `linux/amd64` - `sha256:622013807d01c47e05f1f0a1032a534a237d5c77483b746f3c64ea9c29ce4524` |
 
-## Submission Materials
+This documentation update changes no application code or Docker image. The immutable image above
+remains the exact executable release.
 
-- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Project-Specification.pdf)
-- [4 minute 44.9 second AMD Radeon demo video](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Radeon-Demo.mp4)
-- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/SignalForge-Judge-Deck.pptx)
-- [Architecture diagram](https://github.com/rvbernucci/signalforge/releases/download/sprint36-championship-v1/architecture.svg)
+## Required Materials
+
+- [4 min 26 s AMD Radeon demo](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Radeon-Demo.mp4)
+- [Project specification PDF](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Project-Specification.pdf)
+- [Six-slide judge deck](https://github.com/rvbernucci/signalforge/releases/download/v1.2.0/SignalForge-Judge-Deck.pptx)
+- [Judge guide](https://github.com/rvbernucci/signalforge/blob/main/JUDGES.md)
+- [Architecture](https://github.com/rvbernucci/signalforge/blob/main/docs/architecture.svg)
 - [Track 2 compliance matrix](https://github.com/rvbernucci/signalforge/blob/main/docs/track2-compliance.md)
-- [Exact release attestation](https://github.com/rvbernucci/signalforge/blob/main/evidence/sprint36-release-attestation.json)
-- [Exact-release Radeon journey](https://github.com/rvbernucci/signalforge/blob/main/evidence/sprint36-exact-release-radeon-journey.json)
+- [Final release authority and media hashes](https://github.com/rvbernucci/signalforge/blob/main/evidence/final-release-authority.json)
+- [Complete clean source and verification suite](https://github.com/rvbernucci/signalforge)
 
-The complete immutable `v1.1.1` source snapshot, documentation, deterministic fixtures, tests,
-evidence, PDF, deck, and video are included under `source/`.
+The `source/` directory in this PR is the immutable source snapshot included with the original
+submission. The canonical repository and exact commits above are authoritative for the current
+judge documentation and executable image.
 
 ## Product
 
-SignalForge is a private, local-first financial research desk. It turns public SEC filings,
-official investor-relations evidence, macroeconomic series, and market observations into an
-inspectable research case rather than an opaque chat answer.
+SignalForge is a private, local-first financial research workspace for independent investors. It
+turns public company evidence into an inspectable process with typed multi-agent planning,
+source-authorized retrieval, deterministic financial tools, independent review, optional local
+memory, explicit permissions, and fail-closed answer contracts.
 
-The recorded journey compares Microsoft and NVIDIA as long-term businesses under explicit
-higher-rate and slower AI-infrastructure-spending scenarios. The product separates readable
-analysis from primary evidence, deterministic calculation receipts, assumptions, limitations,
-counterevidence, and thesis-invalidation conditions. It supports research and education; it does
-not predict prices, execute trades, or provide personalized investment recommendations.
+The governed universe covers 20 US-listed technology companies and five metric-level peer lanes:
+Cisco/Arista, Microsoft/Alphabet, NVIDIA/AMD, Oracle/Microsoft, and
+Salesforce/ServiceNow. Unsupported periods, units, definitions, accounting perimeters, and
+overbroad comparisons remain unavailable or fail closed.
 
-## Architecture
+SignalForge is research software. It does not predict prices, execute trades, or provide
+personalized investment recommendations.
 
-1. A typed interpreter closes the research intent and scope.
-2. A Go-owned orchestrator creates a bounded plan and fans out to at most four specialists at once.
-3. A Context Compiler retrieves authorized evidence, preserves conflict, and enforces a budget.
-4. Eighty role-authorized deterministic financial operations own values, units, periods, formulas,
-   relations, and immutable receipts.
-5. Independent Evidence and Risk critics disposition every releasable claim.
-6. One final local analyst synthesizes the approved qualitative draft.
-7. A Go Answer Compiler joins approved claims to citations, receipts, and numerical references.
-8. A React workspace streams a safe expandable execution plan without exposing private reasoning.
+## Agent Architecture
 
-All 11 logical roles share one local Gemma runtime with role-specific prompts and strict contracts.
-The local path is loopback-only on AMD Radeon through ROCm and `llama.cpp`. The optional hybrid path
-routes bounded context specialists through the organizer-provided Radeon API while retaining local
-review, synthesis, deterministic authority, and authorized local fallback.
+1. A typed interpreter closes intent, entities, horizon, and constraints.
+2. A Go planner creates the bounded execution plan and specialist wave.
+3. Point-in-time retrieval resolves authorized evidence and lineage.
+4. Eighty role-authorized deterministic operations own values, periods, units, formulas, and
+   receipts.
+5. Eleven logical roles provide specialist context, independent evidence review, risk challenge,
+   and final synthesis.
+6. The Answer Contract Engine validates and deterministically constructs the released projection.
+7. The React workspace keeps the investor view concise while exposing an expandable plan and
+   privacy-safe Mission Control when requested.
 
-## Track 2 Capabilities
+SignalForge implements all five Track 2 capability families: local retrieval, tool invocation,
+multi-step planning, local multi-turn memory, and permission/privacy controls.
 
-| Capability | SignalForge evidence |
-|---|---|
-| Local knowledge retrieval | Point-in-time SEC and official investor-relations evidence with resolvable citations and lineage |
-| Tool invocation | 80 typed deterministic financial operations with authorization and immutable receipts |
-| Multi-step task planning | Interpreter, bounded specialist waves, independent critics, and one final synthesis |
-| Local multi-turn memory | Governed follow-ups plus opt-in inspect, export, and delete controls |
-| Permission and privacy | Loopback-only local inference, read-only model authority, secret rejection, private traces, and fail-closed release |
+## AMD Radeon And ROCm
 
-SignalForge implements all five capability families listed by Track 2.
+- AMD Radeon Cloud `gfx1100`, 47.98 GiB VRAM, ROCm 7.2.1.
+- Gemma 4 26B A4B Instruct QAT Q4_0 through AMD-validated ROCm `llama.cpp`.
+- 32,768-token context and four continuous-batching specialist slots.
+- 40/40 deterministic model-profile contract checks at 86.4601 median decode tokens/s.
+- The selected four-slot profile was 29.17% faster end-to-end than the passing three-worker
+  control.
+- A 5 hour 28 minute soak completed 180/180 journey contracts with no measured allocated-VRAM
+  growth.
+- The optional Radeon API path is selective; loss of that API recovered locally, while loss of
+  indispensable local authority failed closed.
 
-## AMD Radeon And ROCm Evidence
+These are bounded application-profile measurements, not a universal model ranking or independent
+accuracy certification.
 
-- Environment: AMD Radeon Cloud, Radeon `gfx1100`, ROCm 7.2.1.
-- Runtime: hash-pinned ROCm `llama.cpp` with Gemma 4 26B A4B Instruct QAT Q4_0 GGUF.
-- Baseline: 40/40 deterministic contract checks and 86.46 median decode tokens/s.
-- Accepted optimization: four context workers, unified F16 KV, continuous batching, and flash
-  attention `auto`.
-- Workload result: 44/44 frozen semantic checks in 157.47 seconds, 29.17% faster end to end than
-  the passing three-worker control.
-- The exact `v1.1.1` image was anonymously pulled and read back on Radeon Cloud. Its complete hybrid
-  journey reached all 12 terminal steps with eight local ROCm and eight Radeon API calls; two
-  remote failures recovered before answer release.
-- A separate eight-journey-per-mode development tournament measured `2.7777x` aggregate local
-  speedup with four workers versus the two-worker baseline; all eight hybrid journeys also passed.
+## Verification
 
-These are bounded, hash-backed workload results, not universal accuracy or performance claims.
+The application image passed a clean public pull, SBOM and provenance checks, zero unresolved
+HIGH/CRITICAL vulnerability gates, exact-image fixture execution, and bounded readback on the
+Radeon host. The current repository passed frontend, Go race/vet/tests, Python, financial-reference,
+observability, privacy, hardening, and public-integrity gates in
+[GitHub Actions run 30729164323](https://github.com/rvbernucci/signalforge/actions/runs/30729164323).
 
-## Reproduce
-
-The deterministic fixture requires no GPU, API key, model download, database setup, or external
-data call:
+Pull the exact executable:
 
 ```bash
-git clone --branch v1.1.1 --depth 1 https://github.com/rvbernucci/signalforge.git
+docker pull \
+  ghcr.io/rvbernucci/signalforge@sha256:4b68c713e824d3cea9ad6a83cef4c93304961f9f3c3782a984af312bec47bf43
+```
+
+Run the credential-free source fixture:
+
+```bash
+git clone https://github.com/rvbernucci/signalforge.git
 cd signalforge
 npm --prefix web ci
 npm --prefix web run build
 go run ./cmd/signalforge-workspace --mode fixture --static-dir web/dist
 ```
 
-Open `http://127.0.0.1:8080`. The `source/` directory in this PR is the same immutable Git tree.
-Its README documents dependencies, environment configuration, the live Radeon path, model revision,
-model hash, runtime revision, troubleshooting, container surfaces, and verification.
+Open `http://127.0.0.1:8080/?audience=judge`.
 
-Pull the exact application image by digest:
-
-```bash
-docker pull \
-  ghcr.io/rvbernucci/signalforge@sha256:cbac58cf3e62df0404e9ef1cfc7db6aec49e491e4beb5e1f214d6d562fad814b
-```
-
-## Release Integrity
-
-The application image is public `linux/amd64`, runs as `10001:10001`, and contains no credentials,
-model weights, private corpora, or startup downloads. The container workflow produced SBOM and
-provenance, passed a Trivy HIGH/CRITICAL scan, and verified an anonymous digest pull plus clean
-fixture execution.
-
-The source snapshot is frozen at `v1.1.1`. The two files beside this README,
-`release-checklist-final.json` and `sg05-attestation.json`, bind the exact source, image, workflows,
-judge artifacts, human decisions, and release authorization. Artifact hashes are listed in
-`SHA256SUMS`.
+SignalForge can make mistakes. Important information must be verified before financial decisions.
+The project-owner release decision is not an independent audit opinion, legal opinion, investment
+recommendation, fiduciary service, or professional assurance engagement. Final eligibility and
+scoring remain solely with the hackathon organizers and judges.
